@@ -18,7 +18,7 @@ public class TrajectorySetup {
 	boolean backward;
 	public int counter;
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
-	public int posTraj = 6;
+	public int posTraj = 7;
 	Waypoint[] points;
 	
 	
