@@ -18,7 +18,7 @@ public class TrajectorySetup {
 	boolean backward;
 	public int counter;
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
-	public int posTraj = 1;
+	public int posTraj = 4;
 	Waypoint[] points;
 	
 	
@@ -29,7 +29,7 @@ public class TrajectorySetup {
 	public void setup(int step) {
 		resetCounters();
 		waypointsStep(step);
-		Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 10000, 0.020, 96, 180, 120);
+		Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, 96, 180, 120);
 		trajectory = Pathfinder.generate(points, config);
 		TankModifier modifier = new TankModifier(trajectory);
 		modifier.modify(wheelBase_width);
