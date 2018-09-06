@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -16,6 +17,7 @@ import javax.swing.JPanel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.event.ChartChangeEvent;
 import org.jfree.chart.event.ChartChangeListener;
 import org.jfree.chart.util.PaintAlpha;
@@ -64,6 +66,10 @@ public class GraphTrajectory {
 		XYSeries leftSeries = new XYSeries("Left Side Robot");
 		XYSeries rightSeries = new XYSeries("Right Side Robot");
 		XYSeries lineAcross = new XYSeries("Line Across");
+		double maxX = lineAcross.getMaxX();
+		double minX = lineAcross.getMinX();
+		double maxY = lineAcross.getMaxY();
+		double minY = lineAcross.getMinY();
 		XYSeries robot = new XYSeries("Robot");
 		XYSeries cubeBox = new XYSeries("Cubes");
 		XYSeries cSwitch = new XYSeries("Switch");
@@ -93,8 +99,15 @@ public class GraphTrajectory {
 		dataset.addSeries(fourthRow);
 		dataset.addSeries(fifthRow);
 		dataset.addSeries(sixthRow);
+		dataset.setAutoWidth(false);
 		JFreeChart chart = ChartFactory.createXYLineChart("Pathfinder Trajectory", "Distance X (Inches)", "Distance Y (Inches)", dataset);
-		chart.getXYPlot().setBackgroundPaint(Color.BLACK);
+		chart.getXYPlot().setBackgroundImage(new ImageIcon("Pic.png").getImage());
+		
+		NumberAxis numberRangeAxis = (NumberAxis)chart.getXYPlot().getRangeAxis();
+		numberRangeAxis.setRange(-161.69, 161.69);
+		NumberAxis numberDomainAxis = (NumberAxis)chart.getXYPlot().getDomainAxis();
+		numberDomainAxis.setRange(0, 648);
+		
 		Lpanel.add(new ChartPanel(chart),BorderLayout.NORTH);
 		
 		//create xy line graph for velocity
@@ -198,7 +211,7 @@ public class GraphTrajectory {
 										}
 										lineAcross.add(leftX, leftY);
 										lineAcross.add(rightX, rightY);
-										cubeBox.add(box.drawX(),box.drawY());
+										/*cubeBox.add(box.drawX(),box.drawY());
 										cSwitch.add(cubeSwitch.drawX(), cubeSwitch.drawY());
 										cScale.add(cubeScale.drawX(), cubeScale.drawY());
 										cPlatform.add(platform.drawX(), platform.drawY());
@@ -212,6 +225,7 @@ public class GraphTrajectory {
 										fourthRow.add(boxes.drawBottomX(), boxes.drawBottomY(4));
 										fifthRow.add(boxes.drawBottomX(), boxes.drawBottomY(5));
 										sixthRow.add(boxes.drawBottomX(), boxes.drawBottomY(6));
+										*/
 										
 										leftVSeries.add(timePassed, trajectorySetup.leftVelocity());
 										rightVSeries.add(timePassed, trajectorySetup.rightVelocity());
@@ -222,6 +236,7 @@ public class GraphTrajectory {
 										
 										leftDSeries.add(timePassed, trajectorySetup.leftDistance());
 										rightDSeries.add(timePassed, trajectorySetup.rightDistance());
+										
 									}catch(Exception e) {}
 									counter++;
 								}
