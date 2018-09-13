@@ -1,5 +1,7 @@
 package Main;
 
+import java.io.File;
+
 import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.Trajectory;
 import jaci.pathfinder.Waypoint;
@@ -8,7 +10,8 @@ import jaci.pathfinder.modifiers.TankModifier;
 
 public class TrajectorySetup {
 	
-	double wheelBase_width = 36;
+	//assumes the wheel base is in the "exact" center of the robot
+	double wheelBase_width = 36, wheelBase_length = 32;
 	double robot_width = 40, robot_length = 38;
 	Trajectory left, right;
 	Trajectory.Segment segLeftX, segLeftY, segRightX, segRightY, segLV, segRV, segLA, segRA, segLJ, segRJ, segLP, segRP, segTime, segTraj;
@@ -18,7 +21,7 @@ public class TrajectorySetup {
 	boolean backward;
 	public int counter;
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
-	public int posTraj = 1;
+	public int posTraj = 2;
 	Waypoint[] points;
 	
 	
@@ -31,6 +34,7 @@ public class TrajectorySetup {
 		waypointsStep(step);
 		Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, 96, 180, 120);
 		trajectory = Pathfinder.generate(points, config);
+		Pathfinder.writeToCSV(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv"), trajectory);
 		TankModifier modifier = new TankModifier(trajectory);
 		modifier.modify(wheelBase_width);
 		if(posTraj != 7 && posTraj != 8) {
@@ -73,208 +77,351 @@ public class TrajectorySetup {
 	}
 	
 	private void waypointsStep(int step) {
-		if(step == 1) {												//STEP 1
-			if(posTraj == 1) {//center left switch
-				points = new Waypoint[] {
-					new Waypoint(32,-(robot_width/2)+12,0),
-					new Waypoint(140, 72 -(robot_width/2),0)	
+		switch(posTraj) {
+		case 1: //center left switch
+			
+			this.getTraj1Points(step);
+			
+			break;
+		case 2: //center right switch
+			
+			this.getTraj2Points(step);
+			
+			break;
+		case 3: //left side switch
+			
+			this.getTraj3Points(step);
+			
+			break;
+		case 4: //right side switch
+			
+			this.getTraj4Points(step);
+			
+			break;
+		case 5: //left side scale
+			
+			this.getTraj5Points(step);
+			
+			break;
+		case 6: //right side scale
+			
+			this.getTraj6Points(step);
+			
+			break;
+		case 7: //left side scale cross
+			
+			this.getTraj7Points(step);
+			
+			break;
+		case 8: //right side scale cross
+			
+			this.getTraj8Points(step);
+			
+			break;
+	
+		}
+	}
+	
+	private void getTraj1Points(int step) {
+		
+		if(step == 1) {
+			
+			points = new Waypoint[] {
+					new Waypoint(robot_length/2,(-robot_width/2)+12,0),
+					new Waypoint(140 - (robot_length/2), 72 - (robot_width/2),0)	
 				};
-			}else if(posTraj == 2) {//center right switch
-				points = new Waypoint[] {
-					new Waypoint(32,-(robot_width/2)+12,0),
-					new Waypoint(140,-72+(robot_width/2),0)
+			
+		}else if(step == 2) {
+			
+			points = new Waypoint[] {
+					new Waypoint(140 - (robot_length/2), 72 -(robot_width/2),0),
+					new Waypoint(robot_length/2, 0, 0)
 				};
-			}else if(posTraj == 3) {//left side switch
-				points = new Waypoint[] {
-					new Waypoint(32,-(robot_width/2)+132,0),
+			
+		}else if(step == 3) {
+			
+			points = new Waypoint[] {
+					new Waypoint(robot_length/2, 0, 0),
+					new Waypoint(100 - robot_length/2,0,0)
+				};
+			
+		}else if(step == 4) {
+			
+			points = new Waypoint[] {
+					new Waypoint(100 - robot_length/2,0,0),
+					new Waypoint(robot_length/2, 0, 0)
+				};
+			
+		}else if(step == 5) {
+			
+			points = new Waypoint[] {
+					new Waypoint((robot_length/2), 0, 0),
+					new Waypoint(140 - (robot_length/2), 72 -(wheelBase_width/2),0)
+				};
+			
+		}
+		
+	}
+	
+	private void getTraj2Points(int step) {
+		
+		if(step == 1) {
+			
+			points = new Waypoint[] {
+					new Waypoint(robot_length/2,(-robot_width/2)+12,0),
+					new Waypoint(140 - (robot_length/2),-72+(robot_width/2),0)
+				};
+			
+		}else if(step == 2) {
+			
+			points = new Waypoint[] {
+					new Waypoint(140 - (robot_length/2),-72+(robot_width/2),0),
+					new Waypoint(robot_length/2, 0, 0)
+				};
+			
+		}else if(step == 3) {
+			
+			points = new Waypoint[] {
+					new Waypoint(robot_length/2, 0, 0),
+					new Waypoint(100 - robot_length/2,0,0)
+				};
+			
+		}else if(step == 4) {
+			
+			points = new Waypoint[] {
+					new Waypoint(100 - robot_length/2,0,0),
+					new Waypoint(robot_length/2, 0, 0)
+				};
+			
+		}else if(step == 5) {
+			
+			points = new Waypoint[] {
+					new Waypoint((robot_length/2), 0, 0),
+					new Waypoint(140 - (robot_length/2),-72+(wheelBase_width/2),0)
+				};
+			
+		}
+		
+	}
+	
+	private void getTraj3Points(int step) {
+		
+		if(step == 1) {
+			
+			points = new Waypoint[] {
+					new Waypoint((robot_length/2),-(robot_width/2)+132,0),
 					new Waypoint(140, 115,Pathfinder.d2r(-22.5)),
 					new Waypoint(168, 72,Pathfinder.d2r(270))
 				};
-			}else if(posTraj == 4) {//right side switch
-				points = new Waypoint[] {
-					new Waypoint(32,(robot_width/2)-132,0),
-					new Waypoint(140, -115,Pathfinder.d2r(22.5)),
-					new Waypoint(168, -72,Pathfinder.d2r(90))
-				};
-			}else if(posTraj == 5) {//left side scale
-				points = new Waypoint[] {
-					new Waypoint(32,-(robot_width/2)+132,0),
-					new Waypoint(280, 130, Pathfinder.d2r(-2.5)),
-					new Waypoint(314, 90, Pathfinder.d2r(270))
-				};
-			}else if(posTraj == 6) {//right side scale
-				points = new Waypoint[] {
-					new Waypoint(32,(robot_width/2)-132,0),
-					new Waypoint(280, -130, Pathfinder.d2r(2.5)),
-					new Waypoint(314, -90, Pathfinder.d2r(90))
-				};
-			}else if(posTraj == 7) {//left side scale cross
-				points = new Waypoint[] {
-					new Waypoint(32,-(robot_width/2)+132,0),
-					new Waypoint(185, 72 + 4 + (robot_width/2),Pathfinder.d2r(0)),
-					new Waypoint(209 + 4 + (robot_width/2), 70, Pathfinder.d2r(-90))
-					//new Waypoint(300, -90 + 7/*6.5*/, Pathfinder.d2r(0))
-				};
-			}else if(posTraj == 8) {//right side scale cross
-				points = new Waypoint[] {
-					new Waypoint(32,(robot_width/2)-132,0),
-				};
-			}
-		}else if(step == 2) {										//STEP 2
-			if(posTraj == 1) {//center left switch
-				points = new Waypoint[] {
-					new Waypoint(140, 72 -(robot_width/2),0),
-					new Waypoint(45, 0, 0)
-				};
-			}else if(posTraj == 2) {//center right switch
-				points = new Waypoint[] {
-					new Waypoint(140,-72+(robot_width/2),0),
-					new Waypoint(45, 0, 0)
-				};
-			}else if(posTraj == 3) {//left side switch
-				points = new Waypoint[] {
+			
+		}else if(step == 2) {
+			
+			points = new Waypoint[] {
 					new Waypoint(168, 72,Pathfinder.d2r(270)),
 					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40))
 				};
-			}else if(posTraj == 4) {//right side switch
-				points = new Waypoint[] {
-					new Waypoint(168, -72,Pathfinder.d2r(90)),
-					new Waypoint(243, -120,Pathfinder.d2r(180 - 40))
-				};
-			}else if(posTraj == 5) {//left side scale
-				points = new Waypoint[] {
-					new Waypoint(314, 90, Pathfinder.d2r(270)),
-					new Waypoint(314, 120, Pathfinder.d2r(270))
-				};
-			}else if(posTraj == 6) {//right side scale
-				points = new Waypoint[] {
-					new Waypoint(314, -90, Pathfinder.d2r(90)),
-					new Waypoint(314, -120, Pathfinder.d2r(90))
-				};
-			}else if(posTraj == 7) {	
-				points = new Waypoint[] {
-					new Waypoint(209 + 4 + (robot_width/2), 70, Pathfinder.d2r(-90)),
-					new Waypoint(209 + 4 + (robot_width/2), -50, Pathfinder.d2r(-90)),
-					new Waypoint(300, -90 + 7/*6.5*/, Pathfinder.d2r(0))
-				};
-			}else if(posTraj == 8) {
-				points = new Waypoint[] {
-						
-				};
-			}
-		}else if(step == 3) {										//STEP 3
-			if(posTraj == 1) {//center left switch
-				points = new Waypoint[] {
-					new Waypoint(45, 0, 0),
-					new Waypoint(100,0,0)
-				};
-			}else if(posTraj == 2) {//center right switch
-				points = new Waypoint[] {
-					new Waypoint(45, 0, 0),
-					new Waypoint(100,0,0)
-				};
-			}else if(posTraj == 3) {//left side switch
-				points = new Waypoint[] {
+			
+		}else if(step == 3) {
+			
+			points = new Waypoint[] {
 					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40)),
 					new Waypoint(209, 70 ,Pathfinder.d2r(-180+45))
 				};
-			}else if(posTraj == 4) {//right side switch
-				points = new Waypoint[] {
+			
+		}else if(step == 4) {
+			
+			points = new Waypoint[] {
+					new Waypoint(209, 70 ,Pathfinder.d2r(-180+45)),
+					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40))
+				};
+			
+		}else if(step == 5) {
+			
+			points = new Waypoint[] {
+					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40)),
+					new Waypoint(168, 72,Pathfinder.d2r(270))
+				};
+			
+		}
+		
+	}
+	
+	private void getTraj4Points(int step) {
+		
+		if(step == 1) {
+			
+			points = new Waypoint[] {
+					new Waypoint((robot_length/2),(robot_width/2)-132,0),
+					new Waypoint(140, -115,Pathfinder.d2r(22.5)),
+					new Waypoint(168, -72,Pathfinder.d2r(90))
+				};
+			
+		}else if(step == 2) {
+			
+			points = new Waypoint[] {
+					new Waypoint(168, -72,Pathfinder.d2r(90)),
+					new Waypoint(243, -120,Pathfinder.d2r(180 - 40))
+				};
+			
+		}else if(step == 3) {
+			
+			points = new Waypoint[] {
 					new Waypoint(243, -120,Pathfinder.d2r(180 - 40)),
 					new Waypoint(209, -70 ,Pathfinder.d2r(180-45))
 				};
-			}else if(posTraj == 5) {//left side scale
-				points = new Waypoint[] {
+			
+		}else if(step == 4) {
+			
+			points = new Waypoint[] {
+					new Waypoint(209, -70 ,Pathfinder.d2r(180-45)),
+					new Waypoint(243, -120,Pathfinder.d2r(180 - 40))
+				};
+			
+		}else if(step == 5) {
+			
+			points = new Waypoint[] {
+					new Waypoint(243, -120,Pathfinder.d2r(180 - 40)),
+					new Waypoint(168, -72,Pathfinder.d2r(90))
+				};
+			
+		}
+		
+	}
+	
+	private void getTraj5Points(int step) {
+		
+		if(step == 1) {
+			
+			points = new Waypoint[] {
+					new Waypoint((robot_length/2),-(robot_width/2)+132,0),
+					new Waypoint(280, 130, Pathfinder.d2r(-2.5)),
+					new Waypoint(314, 90, Pathfinder.d2r(270))
+				};
+			
+		}else if(step == 2) {
+			
+			points = new Waypoint[] {
+					new Waypoint(314, 90, Pathfinder.d2r(270)),
+					new Waypoint(314, 120, Pathfinder.d2r(270))
+				};
+			
+		}else if(step == 3) {
+			
+			points = new Waypoint[] {
 					new Waypoint(314, 120, Pathfinder.d2r(270)),
 					new Waypoint(250, 90, Pathfinder.d2r(225)),
 					new Waypoint(209, 72-6.5,Pathfinder.d2r(180))
 				};
-			}else if(posTraj == 6) {//right side scale
-				points = new Waypoint[] {
-					new Waypoint(314, -120, Pathfinder.d2r(90)),
-					new Waypoint(250, -90, Pathfinder.d2r(135)),
-					new Waypoint(209, -72+6.5,Pathfinder.d2r(180))
-				};
-			}else if(posTraj == 7) {
-				points = new Waypoint[] {
-					
-				};
-			}
-		}else if(step == 4) {										//STEP 4
-			if(posTraj == 1) {//center left switch
-				points = new Waypoint[] {
-					new Waypoint(100,0,0),
-					new Waypoint(45, 0, 0)
-				};
-			}else if(posTraj == 2) {//center right switch
-				points = new Waypoint[] {
-					new Waypoint(100,0,0),
-					new Waypoint(45, 0, 0)
-				};
-			}else if(posTraj == 3) {//left side switch
-				points = new Waypoint[] {
-					new Waypoint(209, 70 ,Pathfinder.d2r(-180+45)),
-					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40))
-				};
-			}else if(posTraj == 4) {//right side switch
-				points = new Waypoint[] {
-					new Waypoint(209, -70 ,Pathfinder.d2r(180-45)),
-					new Waypoint(243, -120,Pathfinder.d2r(180 - 40))
-				};
-			}else if(posTraj == 5) {//left side scale
-				points = new Waypoint[] {
+			
+		}else if(step == 4) {
+			
+			points = new Waypoint[] {
 					new Waypoint(209, 72-6.5,Pathfinder.d2r(180)),
 					new Waypoint(250, 90, Pathfinder.d2r(225)),
 					new Waypoint(314, 120, Pathfinder.d2r(270))
 				};
-			}else if(posTraj == 6) {//right side scale
-				points = new Waypoint[] {
+			
+		}else if(step == 5) {
+			
+			points = new Waypoint[] {
+					new Waypoint(314, 120, Pathfinder.d2r(270)),
+					new Waypoint(314, 90, Pathfinder.d2r(270))
+				};
+			
+		}
+		
+	}
+	
+	private void getTraj6Points(int step) {
+		
+		if(step == 1) {
+			
+			points = new Waypoint[] {
+					new Waypoint((robot_length/2),(robot_width/2)-132,0),
+					new Waypoint(280, -130, Pathfinder.d2r(2.5)),
+					new Waypoint(314, -90, Pathfinder.d2r(90))
+				};
+			
+		}else if(step == 2) {
+			
+			points = new Waypoint[] {
+					new Waypoint(314, -90, Pathfinder.d2r(90)),
+					new Waypoint(314, -120, Pathfinder.d2r(90))
+				};
+			
+		}else if(step == 3) {
+			
+			points = new Waypoint[] {
+					new Waypoint(314, -120, Pathfinder.d2r(90)),
+					new Waypoint(250, -90, Pathfinder.d2r(135)),
+					new Waypoint(209, -72+6.5,Pathfinder.d2r(180))
+				};
+			
+		}else if(step == 4) {
+			
+			points = new Waypoint[] {
 					new Waypoint(209, -72+6.5,Pathfinder.d2r(180)),
 					new Waypoint(250, -90, Pathfinder.d2r(135)),
 					new Waypoint(314, -120, Pathfinder.d2r(90))
 				};
-			}else if(posTraj == 7) {
-				points = new Waypoint[] {
-					
-				};
-			}
-		}else if(step == 5) {										//STEP 5
-			if(posTraj == 1) {//center left switch
-				points = new Waypoint[] {
-					new Waypoint(45, 0, 0),
-					new Waypoint(140, 72 -(wheelBase_width/2),0)
-				};
-			}else if(posTraj == 2) {//center right switch
-				points = new Waypoint[] {
-					new Waypoint(45, 0, 0),
-					new Waypoint(140,-72+(wheelBase_width/2),0)
-				};
-			}else if(posTraj == 3) {//left side switch
-				points = new Waypoint[] {
-					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40)),
-					new Waypoint(168, 72,Pathfinder.d2r(270))
-				};
-			}else if(posTraj == 4) {//right side switch
-				points = new Waypoint[] {
-					new Waypoint(243, -120,Pathfinder.d2r(180 - 40)),
-					new Waypoint(168, -72,Pathfinder.d2r(90))
-				};
-			}else if(posTraj == 5) {//left side scale
-				points = new Waypoint[] {
-					new Waypoint(314, 120, Pathfinder.d2r(270)),
-					new Waypoint(314, 90, Pathfinder.d2r(270))
-				};
-			}else if(posTraj == 6) {//right side scale
-				points = new Waypoint[] {
+			
+		}else if(step == 5) {
+			
+			points = new Waypoint[] {
 					new Waypoint(314, -120, Pathfinder.d2r(90)),
 					new Waypoint(314, -90, Pathfinder.d2r(90))
 				};
-			}else if(posTraj == 7) {
-				points = new Waypoint[] {
-					
-				};
-			}
+			
 		}
+		
+	}
+	
+	private void getTraj7Points(int step) {
+		
+		if(step == 1) {
+			
+		}else if(step == 2) {
+			
+		}else if(step == 3) {
+			
+		}else if(step == 4) {
+			
+		}else if(step == 5) {
+			
+		}
+		
+		/*
+		}else if(posTraj == 7) {//left side scale cross
+			points = new Waypoint[] {
+				new Waypoint((robot_length/2),-(robot_width/2)+132,0),
+				new Waypoint(185, 72 + 4 + (robot_width/2),Pathfinder.d2r(0)),
+				new Waypoint(209 + 4 + (robot_width/2), 70, Pathfinder.d2r(-90))
+				remove line ? new Waypoint(300, -90 + 7, Pathfinder.d2r(0))
+			};*/
+				/*
+		}else if(posTraj == 7) {	
+			points = new Waypoint[] {
+				new Waypoint(209 + 4 + (robot_width/2), 70, Pathfinder.d2r(-90)),
+				new Waypoint(209 + 4 + (robot_width/2), -50, Pathfinder.d2r(-90)),
+				new Waypoint(300, -90 + 7, Pathfinder.d2r(0))
+			};*/
+		
+	}
+	
+	private void getTraj8Points(int step) {
+		
+		if(step == 1) {
+			
+		}else if(step == 2) {
+			
+		}else if(step == 3) {
+			
+		}else if(step == 4) {
+			
+		}else if(step == 5) {
+			
+		}
+		
 	}
 	
 	public boolean setupisFinished() {
@@ -392,6 +539,12 @@ public class TrajectorySetup {
 			segTraj = trajectory.get(iTraj);
 			iTraj++;
 		}
+		double xChange = 0;
+		double xSmall = 0;
+		double yChange = 0;
+		double yLarge = 0;
+		double lengthMult = robot_length/2;
+		double widthMult = (robot_width - wheelBase_width)/2;
 		double angle = segTraj.heading;
 		while(angle > Math.PI) {
 			angle -= 2 * Math.PI;
@@ -399,194 +552,125 @@ public class TrajectorySetup {
 		while(angle < -Math.PI) {
 			angle += 2 * Math.PI;
 		}
-		if(backward) {
-			if(ly == ry) {
-				if(lx > rx) {
-					left2x = lx - (robot_width - wheelBase_width)/2;
-					right2x = rx + (robot_width - wheelBase_width)/2;
-					left2y = ly;
-					right2y = ry;
-					left1x = left2x;
-					right1x = right2x;
-					left1y = ly + (robot_length);
-					right1y = ry + (robot_length);
-				}else {
-					left2x = lx + (robot_width - wheelBase_width)/2;
-					right2x = rx - (robot_width - wheelBase_width)/2;
-					left2y = ly;
-					right2y = ry;
-					left1x = left2x;
-					right1x = right2x;
-					left1y = ly - (robot_length);
-					right1y = ry - (robot_length);
-				}
-			}else if(lx == rx) {
-				System.out.println("Hello");
-				if(ly > ry) {
-					left1x = lx - (robot_length);
-					right1x = rx - (robot_length);
-					left1y = ly - (robot_width - wheelBase_width)/2;
-					right1y = ry + (robot_width - wheelBase_width)/2;
-					left2x = lx;
-					right2x = rx;
-					left2y = ly - (robot_width - wheelBase_width)/2;
-					right2y = ry + (robot_width - wheelBase_width)/2;
-				}else {
-					left1x = lx + (robot_length);
-					right1x = rx + (robot_length);
-					left1y = ly + (robot_width - wheelBase_width)/2;
-					right1y = ry - (robot_width - wheelBase_width)/2;
-					left2x = lx;
-					right2x = rx;
-					left2y = ly + (robot_width - wheelBase_width)/2;
-					right2y = ry - (robot_width - wheelBase_width)/2;
-				}
+		double usableAngle = Math.abs(angle);
+		
+		if(!backward) {
+			
+			usableAngle = Math.abs(Math.PI - usableAngle);
+			
+		}
+		System.out.println(usableAngle);
+		if(ly != ry && lx != rx && usableAngle > (Math.PI/2)) {
+			
+			double x1 = Math.abs((lengthMult - (widthMult / Math.tan(Math.PI - usableAngle))) * Math.cos(Math.PI - usableAngle));
+			double x2 = Math.abs(widthMult / Math.sin(Math.PI - usableAngle));
+			xSmall = Math.abs((lengthMult + (widthMult / Math.tan(Math.PI - usableAngle))) * Math.cos(Math.PI - usableAngle));
+			xChange = x1 + x2;
+			yChange = Math.abs((lengthMult - (widthMult / Math.tan(Math.PI - usableAngle))) * Math.sin(Math.PI - usableAngle));
+			yLarge = Math.abs((lengthMult + (widthMult / Math.tan(Math.PI - usableAngle))) * Math.sin(Math.PI - usableAngle));
+		
+		}else if(ly != ry && lx != rx){
+
+			double x1 = Math.abs((lengthMult - (widthMult / Math.tan((Math.PI/2) - usableAngle))) * Math.cos((Math.PI/2) - usableAngle));
+			double x2 = Math.abs(widthMult / Math.sin((Math.PI/2) - usableAngle));
+			xSmall = Math.abs((lengthMult + (widthMult / Math.tan((Math.PI/2) - usableAngle))) * Math.cos((Math.PI/2) - usableAngle));
+			xChange = x1 + x2;
+			yChange = Math.abs((lengthMult - (widthMult / Math.tan((Math.PI/2) - usableAngle))) * Math.sin((Math.PI/2) - usableAngle));
+			yLarge = Math.abs((lengthMult + (widthMult / Math.tan((Math.PI/2) - usableAngle))) * Math.sin((Math.PI/2) - usableAngle));
+			
+		}
+		System.out.println(xSmall + "\t" + xChange + "\t" + yChange + "\t" + yLarge);
+		
+		if((ly >= ry - 6 && ly <= ry + 6)||(ry >= ly - 6 && ry <= ly + 6)) {
+			if(lx > rx) {
+				left1x = lx + widthMult;
+				right1x = rx - widthMult;
+				left1y = ly - lengthMult;
+				right1y = ry - lengthMult;
+				left2x = lx + widthMult;
+				right2x = rx - widthMult;
+				left2y = ly + lengthMult;
+				right2y = ry + lengthMult;
 			}else {
-				if(ly > ry) {
-					if(lx > rx) { //angle > about 1.57 and < about 3.14
-						double usableAngle = -angle;
-						left2x = lx - (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2x = rx + (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left2y = ly - (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2y = ry + (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left1x = left2x + (Math.cos(usableAngle) * robot_length);
-						right1x = right2x + (Math.cos(usableAngle) * robot_length);
-						left1y = left2y - (Math.sin(usableAngle) * robot_length);
-						right1y = right2y - (Math.sin(usableAngle) * robot_length);
-					}else{
-						//angle > -3.14 and < about -1.57
-						double usableAngle = angle;
-						left2x = lx + (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2x = rx - (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left2y = ly - (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2y = ry + (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left1x = left2x + (Math.cos(usableAngle) * robot_length);
-						right1x = right2x + (Math.cos(usableAngle) * robot_length);
-						left1y = left2y + (Math.sin(usableAngle) * robot_length);
-						right1y = right2y + (Math.sin(usableAngle) * robot_length);
-						
-					}
-				}else {
-					if(lx > rx) {
-						//angle > 0 and < about 1.57	
-						double usableAngle = -(angle - Math.PI);
-						left2x = lx + (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2x = rx - (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left2y = ly - (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2y = ry + (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left1x = left2x - (Math.cos(usableAngle) * robot_length);
-						right1x = right2x - (Math.cos(usableAngle) * robot_length);
-						left1y = left2y + (Math.sin(usableAngle) * robot_length);
-						right1y = right2y + (Math.sin(usableAngle) * robot_length);
-						
-					}else{
-						//angle > about -1.57 and < 0
-						double usableAngle = Math.PI - angle;
-						left2x = lx + (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2x = rx - (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left2y = ly + (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2y = ry - (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left1x = left2x - (Math.cos(usableAngle) * robot_length);
-						right1x = right2x - (Math.cos(usableAngle) * robot_length);
-						left1y = left2y + (Math.sin(usableAngle) * robot_length);
-						right1y = right2y + (Math.sin(usableAngle) * robot_length);
-						
-					}
-				}
+				left1x = lx - widthMult;
+				right1x = rx + widthMult;
+				left1y = ly + lengthMult;
+				right1y = ry + lengthMult;
+				left2x = lx - widthMult;
+				right2x = rx + widthMult;
+				left2y = ly - lengthMult;
+				right2y = ry - lengthMult;
+			}
+		}else if((lx >= rx - 6 && lx <= rx + 6)||(rx >= lx - 6 && rx <= lx + 6)) {
+			if(ly > ry) {
+				left1x = lx + lengthMult;
+				right1x = rx + lengthMult;
+				left1y = ly + widthMult;
+				right1y = ry - widthMult;
+				left2x = lx - lengthMult;
+				right2x = rx - lengthMult;
+				left2y = ly + widthMult;
+				right2y = ry - widthMult;
+			}else {
+				left1x = lx - lengthMult;
+				right1x = rx - lengthMult;
+				left1y = ly - widthMult;
+				right1y = ry + widthMult;
+				left2x = lx + lengthMult;
+				right2x = rx + lengthMult;
+				left2y = ly - widthMult;
+				right2y = ry + widthMult;
 			}
 		}else {
-			if(ly == ry) {
-				if(lx > rx) {
-					left1x = lx + (robot_width - wheelBase_width)/2;
-					right1x = rx - (robot_width - wheelBase_width)/2;
-					left1y = ly + (robot_length);
-					right1y = ry + (robot_length);
-					left2x = lx + (robot_width - wheelBase_width)/2;
-					right2x = rx - (robot_width - wheelBase_width)/2;
-					left2y = ly;
-					right2y = ry;
-				}else {
-					left1x = lx - (robot_width - wheelBase_width)/2;
-					right1x = rx + (robot_width - wheelBase_width)/2;
-					left1y = ly - (robot_length);
-					right1y = ry - (robot_length);
-					left2x = lx - (robot_width - wheelBase_width)/2;
-					right2x = rx + (robot_width - wheelBase_width)/2;
-					left2y = ly;
-					right2y = ry;
-				}
-			}else if(lx == rx) {
-				if(ly > ry) {
-					left1x = lx - (robot_length);
-					right1x = rx - (robot_length);
-					left1y = ly + (robot_width - wheelBase_width)/2;
-					right1y = ry - (robot_width - wheelBase_width)/2;
-					left2x = lx;
-					right2x = rx;
-					left2y = ly + (robot_width - wheelBase_width)/2;
-					right2y = ry - (robot_width - wheelBase_width)/2;
-				}else {
-					left1x = lx + (robot_length);
-					right1x = rx + (robot_length);
-					left1y = ly - (robot_width - wheelBase_width)/2;
-					right1y = ry + (robot_width - wheelBase_width)/2;
-					left2x = lx;
-					right2x = rx;
-					left2y = ly - (robot_width - wheelBase_width)/2;
-					right2y = ry + (robot_width - wheelBase_width)/2;
+			if(ly > ry) {
+				if(lx > rx) { 						//angle > about 1.57 and < about 3.14
+					left1x = lx - xChange;
+					right1x = rx - xSmall;
+					left1y = ly + yChange;
+					right1y = ry + yLarge;
+					left2x = lx + xSmall ;
+					right2x = rx + xChange;
+					left2y = ly - yLarge;
+					right2y = ry - yChange;
+				}else{ 								//angle > -3.14 and < about -1.57
+					left1x = lx - yChange;
+					right1x = rx - yLarge;
+					left1y = ly - xChange;
+					right1y = ry - xSmall;
+					left2x = lx + yLarge;
+					right2x = rx + yChange;
+					left2y = ly + xSmall;
+					right2y = ry + xChange;
+					
 				}
 			}else {
-				if(ly > ry) {
-					if(lx > rx) { 
-						//angle > about -1.57 and < 0
-						double usableAngle = -angle;
-						left2x = lx + (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2x = rx - (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left2y = ly + (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2y = ry - (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left1x = left2x - (Math.cos(usableAngle) * robot_length);
-						right1x = right2x - (Math.cos(usableAngle) * robot_length);
-						left1y = left2y + (Math.sin(usableAngle) * robot_length);
-						right1y = right2y + (Math.sin(usableAngle) * robot_length);
-					}else{
-						//angle > 0 and < about 1.57
-						double usableAngle = angle;
-						left2x = lx - (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2x = rx + (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left2y = ly + (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2y = ry - (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left1x = left2x - (Math.cos(usableAngle) * robot_length);
-						right1x = right2x - (Math.cos(usableAngle) * robot_length);
-						left1y = left2y - (Math.sin(usableAngle) * robot_length);
-						right1y = right2y - (Math.sin(usableAngle) * robot_length);
-					}
-				}else {
-					if(lx > rx) {
-						//angle > about -3.14 and < about -1.57	
-						double usableAngle = -(angle - Math.PI);
-						left2x = lx + (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2x = rx - (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left2y = ly - (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2y = ry + (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left1x = left2x + (Math.cos(usableAngle) * robot_length);
-						right1x = right2x + (Math.cos(usableAngle) * robot_length);
-						left1y = left2y - (Math.sin(usableAngle) * robot_length);
-						right1y = right2y - (Math.sin(usableAngle) * robot_length);
-					}else{
-						//angle > about 1.57 and < about 3.14
-						double usableAngle = Math.PI - angle;
-						left2x = lx - (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2x = rx + (Math.cos(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left2y = ly - (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						right2y = ry + (Math.sin(usableAngle) * ((robot_width - wheelBase_width)/2));
-						left1x = left2x + (Math.cos(usableAngle) * robot_length);
-						right1x = right2x + (Math.cos(usableAngle) * robot_length);
-						left1y = left2y - (Math.sin(usableAngle) * robot_length);
-						right1y = right2y - (Math.sin(usableAngle) * robot_length);
-					}
+				if(lx > rx) {
+					//System.out.println(usableAngle);
+					//angle < -1.57 and > about -3.14
+					left1x = lx - yChange;
+					right1x = rx - yLarge;
+					left1y = ly - xChange;
+					right1y = ry - xSmall;
+					left2x = lx + yLarge;
+					right2x = rx + yChange;
+					left2y = ly + xSmall;
+					right2y = ry + xChange;
+					
+				}else{
+					//angle > about -1.57 and < 0
+					left1x = lx + xSmall;
+					right1x = rx + xChange;
+					left1y = ly - yLarge;
+					right1y = ry - yChange;
+					left2x = lx - xChange;
+					right2x = lx - xSmall;
+					left2y = ly + yChange;
+					right2y = ry + yLarge;
+					
 				}
 			}
 		}
+	
 	}	
 	
 	public void drawRobot(){
