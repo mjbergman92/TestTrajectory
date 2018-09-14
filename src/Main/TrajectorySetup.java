@@ -21,7 +21,7 @@ public class TrajectorySetup {
 	boolean backward;
 	public int counter;
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
-	public int posTraj = 2;
+	public int posTraj = 1;
 	Waypoint[] points;
 	
 	
@@ -554,7 +554,11 @@ public class TrajectorySetup {
 		}
 		double usableAngle = Math.abs(angle);
 		
-		if(!backward) {
+		if(!backward && angle < 0) {
+			
+			usableAngle = Math.abs(Math.PI - usableAngle);
+			
+		}else if (backward && angle < 0) {
 			
 			usableAngle = Math.abs(Math.PI - usableAngle);
 			
