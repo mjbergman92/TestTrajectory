@@ -21,7 +21,7 @@ public class TrajectorySetup {
 	boolean backward;
 	public int counter;
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
-	public int posTraj = 1;
+	public int posTraj;
 	Waypoint[] points;
 	
 	
@@ -30,6 +30,7 @@ public class TrajectorySetup {
 	}
 	
 	public void setup(int step) {
+		posTraj = GraphTrajectory.traj;
 		resetCounters();
 		waypointsStep(step);
 		Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, 96, 180, 120);
@@ -428,7 +429,7 @@ public class TrajectorySetup {
 		return i1 == left.length();
 	}
 	
-	private void resetCounters() {
+	public void resetCounters() {
 		i1 = 0; i2 = 0; i3 = 0; i4 = 0; iLV = 0; iRV = 0; iLA = 0; iRA = 0; iLJ = 0; iRJ = 0; iLP = 0; iRP = 0; iTraj = 0;
 	}
 	
