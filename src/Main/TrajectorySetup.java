@@ -1,6 +1,13 @@
 package Main;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.DecimalFormat;
+import java.util.Scanner;
 
 import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.Trajectory;
@@ -10,7 +17,7 @@ import jaci.pathfinder.modifiers.TankModifier;
 
 public class TrajectorySetup {
 	
-	//assumes the wheel base is in the "exact" center of the robot
+	//assumes the pivot is in the "exact" center of the robot
 	double wheelBase_width = 36, wheelBase_length = 32;
 	double robot_width = 40, robot_length = 38;
 	Trajectory left, right;
@@ -23,6 +30,9 @@ public class TrajectorySetup {
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
 	public int posTraj;
 	Waypoint[] points;
+	private final double absMaxVelocity = 96;
+	private double setVelocity = 0;
+	public boolean checkDone = false;
 	
 	
 	public TrajectorySetup() {
@@ -30,12 +40,88 @@ public class TrajectorySetup {
 	}
 	
 	public void setup(int step) {
+		
+		checkDone = false;
 		posTraj = GraphTrajectory.traj;
 		resetCounters();
 		waypointsStep(step);
-		Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, 96, 180, 120);
-		trajectory = Pathfinder.generate(points, config);
-		Pathfinder.writeToCSV(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv"), trajectory);
+		
+		if(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv").canRead() && new File("velocity" + step + posTraj + ".csv").canRead()) {
+			
+			Trajectory matches = Pathfinder.readFromCSV(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv"));
+			Scanner scanner;
+			double velocity = 0;
+			try {
+				
+				scanner = new Scanner(new File("velocity" + step + posTraj + ".csv"));
+				velocity = Double.parseDouble(scanner.next());
+				scanner.close();
+				
+			} catch (FileNotFoundException e1) {
+				
+				e1.printStackTrace();
+				
+			}
+			
+			Trajectory.Config configurationMatches = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, velocity, 180, 400);
+			Trajectory possibleTrajectory = Pathfinder.generate(points, configurationMatches);
+			DecimalFormat numberFormat = new DecimalFormat("#.000"); 
+			double matchesTest = Double.parseDouble(numberFormat.format(matches.segments[matches.length()/3].heading));
+			double possibleTest = Double.parseDouble(numberFormat.format(possibleTrajectory.segments[possibleTrajectory.length()/3].heading));
+			
+			if(matchesTest == possibleTest) {
+				
+				trajectory = possibleTrajectory;
+				
+			}else {
+				
+				testTrajectory(step);
+				Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, setVelocity, 180, 400);
+				trajectory = Pathfinder.generate(points, configuration);
+				Pathfinder.writeToCSV(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv"), trajectory);
+				
+				try {
+					
+					FileWriter fw = new FileWriter("velocity" + step + posTraj + ".csv");
+					BufferedWriter bw = new BufferedWriter(fw);
+					PrintWriter pw = new PrintWriter(bw);
+					
+					pw.print(setVelocity);
+					pw.flush();
+					pw.close();
+					
+				} catch (IOException e) {
+
+					e.printStackTrace();
+					
+				}
+			}
+			
+		}else {
+			
+			testTrajectory(step);
+			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, setVelocity, 180, 400);
+			trajectory = Pathfinder.generate(points, configuration);
+			Pathfinder.writeToCSV(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv"), trajectory);
+			
+			try {
+				
+				FileWriter fw = new FileWriter("velocity" + step + posTraj + ".csv");
+				BufferedWriter bw = new BufferedWriter(fw);
+				PrintWriter pw = new PrintWriter(bw);
+				
+				pw.print(setVelocity);
+				pw.flush();
+				pw.close();
+				
+			} catch (IOException e) {
+				
+				e.printStackTrace();
+			
+			}
+		}
+		
+		resetCounters();
 		TankModifier modifier = new TankModifier(trajectory);
 		modifier.modify(wheelBase_width);
 		if(posTraj != 7 && posTraj != 8) {
@@ -73,6 +159,63 @@ public class TrajectorySetup {
 				left = modifier.getRightTrajectory();
 				right = modifier.getLeftTrajectory();
 				backward = true;
+			}
+		}
+		
+		checkDone = true;
+		
+	}
+	
+	private void testTrajectory(int step) {
+				
+		long originalTime = System.currentTimeMillis();
+		int countTimeTest = 1;
+		boolean good;
+		while(countTimeTest <= absMaxVelocity) {
+			
+			if(System.currentTimeMillis() - originalTime > countTimeTest * 40) {
+				good = true;
+				resetCounters();
+				double test = countTimeTest;
+				//System.out.println(test);
+				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, test, 180, 400);
+				Trajectory trajectory = Pathfinder.generate(points, config);
+				TankModifier modifier = new TankModifier(trajectory);
+				modifier.modify(wheelBase_width);
+				Trajectory left = modifier.getLeftTrajectory();
+				Trajectory right = modifier.getRightTrajectory();
+				
+				for(int l = 0; l < left.length(); l++) {
+					
+					double leftVel = left.get(l).velocity;
+					
+					if(leftVel > absMaxVelocity) {
+						
+						good = false;
+						
+					}
+				}
+				
+				for(int r = 0; r < right.length(); r++) {
+					
+					double rightVel = right.get(r).velocity;
+					
+					if(rightVel > absMaxVelocity) {
+						
+						good = false;
+						
+					}
+				}
+				
+				if(good) {
+					
+					setVelocity = test;
+					//System.out.println(test);
+					
+				}			
+				
+				countTimeTest++;
+				
 			}
 		}
 	}
@@ -133,6 +276,7 @@ public class TrajectorySetup {
 				};
 			
 		}else if(step == 2) {
+			
 			
 			points = new Waypoint[] {
 					new Waypoint(140 - (robot_length/2), 72 -(robot_width/2),0),
@@ -211,36 +355,36 @@ public class TrajectorySetup {
 			
 			points = new Waypoint[] {
 					new Waypoint((robot_length/2),-(robot_width/2)+132,0),
-					new Waypoint(140, 115,Pathfinder.d2r(-22.5)),
-					new Waypoint(168, 72,Pathfinder.d2r(270))
+					new Waypoint(120, 135, 0),
+					new Waypoint(168, 76.44 + (robot_length/2),Pathfinder.d2r(270))
 				};
 			
 		}else if(step == 2) {
 			
 			points = new Waypoint[] {
-					new Waypoint(168, 72,Pathfinder.d2r(270)),
-					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40))
+					new Waypoint(168, 76.44 + (robot_length/2),Pathfinder.d2r(270)),
+					new Waypoint(245, 135,Pathfinder.d2r(-135))
 				};
 			
 		}else if(step == 3) {
 			
 			points = new Waypoint[] {
-					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40)),
-					new Waypoint(209, 70 ,Pathfinder.d2r(-180+45))
+					new Waypoint(245, 135,Pathfinder.d2r(-135)),
+					new Waypoint(229, 90,Pathfinder.d2r(-180+45))
 				};
 			
 		}else if(step == 4) {
 			
 			points = new Waypoint[] {
-					new Waypoint(209, 70 ,Pathfinder.d2r(-180+45)),
-					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40))
+					new Waypoint(229, 90,Pathfinder.d2r(-180+45)),
+					new Waypoint(245, 135,Pathfinder.d2r(-135))
 				};
 			
 		}else if(step == 5) {
 			
 			points = new Waypoint[] {
-					new Waypoint(243, 120,Pathfinder.d2r(-180 + 40)),
-					new Waypoint(168, 72,Pathfinder.d2r(270))
+					new Waypoint(245, 135,Pathfinder.d2r(-135)),
+					new Waypoint(168, 76.44 + (robot_length/2),Pathfinder.d2r(270))
 				};
 			
 		}
@@ -253,14 +397,14 @@ public class TrajectorySetup {
 			
 			points = new Waypoint[] {
 					new Waypoint((robot_length/2),(robot_width/2)-132,0),
-					new Waypoint(140, -115,Pathfinder.d2r(22.5)),
-					new Waypoint(168, -72,Pathfinder.d2r(90))
+					new Waypoint(140, -125,Pathfinder.d2r(22.5)),
+					new Waypoint(168, -76.44 - (robot_length/2),Pathfinder.d2r(90))
 				};
 			
 		}else if(step == 2) {
 			
 			points = new Waypoint[] {
-					new Waypoint(168, -72,Pathfinder.d2r(90)),
+					new Waypoint(168, -76.44 - (robot_length/2),Pathfinder.d2r(90)),
 					new Waypoint(243, -120,Pathfinder.d2r(180 - 40))
 				};
 			
@@ -282,7 +426,7 @@ public class TrajectorySetup {
 			
 			points = new Waypoint[] {
 					new Waypoint(243, -120,Pathfinder.d2r(180 - 40)),
-					new Waypoint(168, -72,Pathfinder.d2r(90))
+					new Waypoint(168, -76.44 - (robot_length/2),Pathfinder.d2r(90))
 				};
 			
 		}
@@ -374,7 +518,6 @@ public class TrajectorySetup {
 				};
 			
 		}
-		
 	}
 	
 	private void getTraj7Points(int step) {
@@ -540,10 +683,14 @@ public class TrajectorySetup {
 			segTraj = trajectory.get(iTraj);
 			iTraj++;
 		}
-		double xChange = 0;
-		double xSmall = 0;
-		double yChange = 0;
-		double yLarge = 0;
+		double x2 = 0;
+		double xOutside = 0;
+		double xInside = 0;
+		double yOutside = 0;
+		double yInside = 0;
+		double lengthDiff = 0;
+		double shortLength = 0;
+		double longLength = 0;
 		double lengthMult = robot_length/2;
 		double widthMult = (robot_width - wheelBase_width)/2;
 		double angle = segTraj.heading;
@@ -553,40 +700,8 @@ public class TrajectorySetup {
 		while(angle < -Math.PI) {
 			angle += 2 * Math.PI;
 		}
-		double usableAngle = Math.abs(angle);
 		
-		if(!backward && angle < 0) {
-			
-			usableAngle = Math.abs(Math.PI - usableAngle);
-			
-		}else if (backward && angle < 0) {
-			
-			usableAngle = Math.abs(Math.PI - usableAngle);
-			
-		}
-		System.out.println(usableAngle);
-		if(ly != ry && lx != rx && usableAngle > (Math.PI/2)) {
-			
-			double x1 = Math.abs((lengthMult - (widthMult / Math.tan(Math.PI - usableAngle))) * Math.cos(Math.PI - usableAngle));
-			double x2 = Math.abs(widthMult / Math.sin(Math.PI - usableAngle));
-			xSmall = Math.abs((lengthMult + (widthMult / Math.tan(Math.PI - usableAngle))) * Math.cos(Math.PI - usableAngle));
-			xChange = x1 + x2;
-			yChange = Math.abs((lengthMult - (widthMult / Math.tan(Math.PI - usableAngle))) * Math.sin(Math.PI - usableAngle));
-			yLarge = Math.abs((lengthMult + (widthMult / Math.tan(Math.PI - usableAngle))) * Math.sin(Math.PI - usableAngle));
-		
-		}else if(ly != ry && lx != rx){
-
-			double x1 = Math.abs((lengthMult - (widthMult / Math.tan((Math.PI/2) - usableAngle))) * Math.cos((Math.PI/2) - usableAngle));
-			double x2 = Math.abs(widthMult / Math.sin((Math.PI/2) - usableAngle));
-			xSmall = Math.abs((lengthMult + (widthMult / Math.tan((Math.PI/2) - usableAngle))) * Math.cos((Math.PI/2) - usableAngle));
-			xChange = x1 + x2;
-			yChange = Math.abs((lengthMult - (widthMult / Math.tan((Math.PI/2) - usableAngle))) * Math.sin((Math.PI/2) - usableAngle));
-			yLarge = Math.abs((lengthMult + (widthMult / Math.tan((Math.PI/2) - usableAngle))) * Math.sin((Math.PI/2) - usableAngle));
-			
-		}
-		System.out.println(xSmall + "\t" + xChange + "\t" + yChange + "\t" + yLarge);
-		
-		if((ly >= ry - 6 && ly <= ry + 6)||(ry >= ly - 6 && ry <= ly + 6)) {
+		if(ly == ry) {
 			if(lx > rx) {
 				left1x = lx + widthMult;
 				right1x = rx - widthMult;
@@ -606,7 +721,7 @@ public class TrajectorySetup {
 				left2y = ly - lengthMult;
 				right2y = ry - lengthMult;
 			}
-		}else if((lx >= rx - 6 && lx <= rx + 6)||(rx >= lx - 6 && rx <= lx + 6)) {
+		}else if(lx == rx) {
 			if(ly > ry) {
 				left1x = lx + lengthMult;
 				right1x = rx + lengthMult;
@@ -626,51 +741,106 @@ public class TrajectorySetup {
 				left2y = ly - widthMult;
 				right2y = ry + widthMult;
 			}
-		}else {
+		}else{
+			
+			if(backward) {
+				
+				if(angle > 0) {
+					
+					angle -= Math.PI;
+					
+				}else {
+					
+					angle += Math.PI;
+					
+				}
+				
+			}
+			
 			if(ly > ry) {
-				if(lx > rx) { 						//angle > about 1.57 and < about 3.14
-					left1x = lx - xChange;
-					right1x = rx - xSmall;
-					left1y = ly + yChange;
-					right1y = ry + yLarge;
-					left2x = lx + xSmall ;
-					right2x = rx + xChange;
-					left2y = ly - yLarge;
-					right2y = ry - yChange;
-				}else{ 								//angle > -3.14 and < about -1.57
-					left1x = lx - yChange;
-					right1x = rx - yLarge;
-					left1y = ly - xChange;
-					right1y = ry - xSmall;
-					left2x = lx + yLarge;
-					right2x = rx + yChange;
-					left2y = ly + xSmall;
-					right2y = ry + xChange;
+				if(lx > rx) { 						//angle < 0 and > about -1.57
+					angle = Math.abs(angle);
+					x2 = widthMult / Math.sin(angle);
+					lengthDiff = widthMult / Math.tan(angle);
+					shortLength = lengthMult - lengthDiff;
+					longLength = lengthMult + lengthDiff;
+					xOutside = shortLength * Math.cos(angle) + x2;
+					xInside = longLength * Math.cos(angle) - x2;
+					yOutside = shortLength * Math.sin(angle);
+					yInside = longLength * Math.sin(angle);
+					
+					left1x = lx + xOutside;
+					right1x = rx + xInside;
+					left1y = ly - yOutside;
+					right1y = ry - yInside;
+					left2x = lx - xInside;
+					right2x = rx - xOutside;
+					left2y = ly + yInside;
+					right2y = ry + yOutside;
+				}else{ 								//angle > 0 and < about 1.57 
+					angle = Math.abs(angle);
+					angle = (Math.PI / 2) - angle;
+					x2 = widthMult / Math.sin(angle);
+					lengthDiff = widthMult / Math.tan(angle);
+					shortLength = lengthMult - lengthDiff;
+					longLength = lengthMult + lengthDiff;
+					xOutside = shortLength * Math.sin(angle);
+					xInside = longLength * Math.sin(angle);
+					yOutside = shortLength * Math.cos(angle) + x2;  
+					yInside = longLength * Math.cos(angle) - x2;
+					
+					left1x = lx + xOutside;
+					right1x = rx + xInside;
+					left1y = ly + yOutside;
+					right1y = ry + yInside;
+					left2x = lx - xInside;
+					right2x = rx - xOutside;
+					left2y = ly - yInside;
+					right2y = ry - yOutside;
 					
 				}
 			}else {
-				if(lx > rx) {
-					//System.out.println(usableAngle);
-					//angle < -1.57 and > about -3.14
-					left1x = lx - yChange;
-					right1x = rx - yLarge;
-					left1y = ly - xChange;
-					right1y = ry - xSmall;
-					left2x = lx + yLarge;
-					right2x = rx + yChange;
-					left2y = ly + xSmall;
-					right2y = ry + xChange;
+				if(lx > rx) {						//angle < -1.57 and > about -3.14
+					angle = Math.abs(angle);
+					angle = angle - (Math.PI / 2);
+					x2 = widthMult / Math.sin(angle);
+					lengthDiff = widthMult / Math.tan(angle);
+					shortLength = lengthMult - lengthDiff;
+					longLength = lengthMult + lengthDiff;
+					xOutside = shortLength * Math.sin(angle);
+					xInside = longLength * Math.sin(angle);
+					yOutside = shortLength * Math.cos(angle) + x2;  
+					yInside = longLength * Math.cos(angle) - x2;
 					
-				}else{
-					//angle > about -1.57 and < 0
-					left1x = lx + xSmall;
-					right1x = rx + xChange;
-					left1y = ly - yLarge;
-					right1y = ry - yChange;
-					left2x = lx - xChange;
-					right2x = lx - xSmall;
-					left2y = ly + yChange;
-					right2y = ry + yLarge;
+					left1x = lx - xOutside;
+					right1x = rx - xInside;
+					left1y = ly - yOutside;
+					right1y = ry - yInside;
+					left2x = lx + xInside;
+					right2x = rx + xOutside;
+					left2y = ly + yInside;
+					right2y = ry + yOutside;
+					
+				}else{								//angle > 1.57 and < 3.14
+					angle = Math.abs(angle);
+					angle = Math.PI - angle;
+					x2 = widthMult / Math.sin(angle);
+					lengthDiff = widthMult / Math.tan(angle);
+					shortLength = lengthMult - lengthDiff;
+					longLength = lengthMult + lengthDiff;
+					xOutside = shortLength * Math.cos(angle) + x2;
+					xInside = longLength * Math.cos(angle) - x2;
+					yOutside = shortLength * Math.sin(angle);
+					yInside = longLength * Math.sin(angle);
+					
+					left1x = lx - xOutside;
+					right1x = rx - xInside;
+					left1y = ly + yOutside;
+					right1y = ry + yInside;
+					left2x = lx + xInside;
+					right2x = rx + xOutside;
+					left2y = ly - yInside;
+					right2y = ry - yOutside;
 					
 				}
 			}

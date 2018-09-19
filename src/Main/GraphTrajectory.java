@@ -3,48 +3,38 @@ package Main;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Paint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.io.File;
-import java.util.Scanner;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.event.ChartChangeEvent;
-import org.jfree.chart.event.ChartChangeListener;
-import org.jfree.chart.util.PaintAlpha;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.RectangleInsets;
 
 public class GraphTrajectory {
 
-	static double counter, timePassed;
-	static double originalTime;
-	static boolean run = true;
-	static boolean disabled = false;
-	static int step = 1;
-	static boolean paused = false;
-	static int traj = 1;
-	static char[] trajPossible = {'1','2','3','4','5','6','7','8'};
+	static String baseInstructions = "Enter Trajectory #. Then Press the 'r' Key", trajSet = "Trajectory ", running = " Running", pause = " Paused", pressR = " Press the 'r' Key to Run Trajectory", wait = "Please Wait";
+	static double counter, timePassed; //tracking and calculating for loop and time sensitive data for the graphs
+	static double originalTime; //set at the beginning when load is clicked. current time of the system in milliseconds
+	static boolean run = false; //for the while loop for the "Load" and "End"
+	static int step = 1; //the step of the trajectory. default step 1
+	static boolean paused = false; //the boolean used to determine if the graph is paused controlled by the enter/return key
+	static int traj = 0; //the trajectory choice
 	static boolean setup = false;
-	static int threadI = 0;
 	static boolean firstTime = true;
+	static boolean wait1 = true;
 	
 	public static void main(String args[]) {
-		
-		
 		
 		TrajectorySetup trajectorySetup = new TrajectorySetup();
 		
@@ -56,14 +46,22 @@ public class GraphTrajectory {
 		window.setLayout(new BorderLayout());
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		
-		
+		//create and configure the button and label
 		JButton button = new JButton("End");
+		JLabel label = new JLabel();
+		label.setText(baseInstructions);
+		label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+		JPanel topPanel = new JPanel();
+		topPanel.setLayout(new BorderLayout());
+		topPanel.add(button, BorderLayout.EAST);
+		topPanel.add(label, BorderLayout.CENTER);
+		window.add(topPanel,BorderLayout.NORTH);
+		
+		//create panels for window
 		JPanel Lpanel = new JPanel();
 		Lpanel.setLayout(new BorderLayout());
 		JPanel Rpanel = new JPanel();
 		Rpanel.setLayout(new BorderLayout());
-		window.add(button,BorderLayout.NORTH);
 		
 		//create xy line graph for x and y coordinates
 		XYSeries leftSeries = new XYSeries("Left Side Robot");
@@ -77,12 +75,10 @@ public class GraphTrajectory {
 		dataset.setAutoWidth(false);
 		JFreeChart chart = ChartFactory.createXYLineChart("Pathfinder Trajectory", "Distance X (Inches)", "Distance Y (Inches)", dataset);
 		chart.getXYPlot().setBackgroundImage(new ImageIcon("Pic.png").getImage());
-		
 		NumberAxis numberRangeAxis = (NumberAxis)chart.getXYPlot().getRangeAxis();
 		numberRangeAxis.setRange(-161.69, 161.69);
 		NumberAxis numberDomainAxis = (NumberAxis)chart.getXYPlot().getDomainAxis();
 		numberDomainAxis.setRange(0, 648);
-		
 		Lpanel.add(new ChartPanel(chart),BorderLayout.NORTH);
 		
 		//create xy line graph for velocity
@@ -101,7 +97,7 @@ public class GraphTrajectory {
 		JFreeChart VAJchart = ChartFactory.createXYLineChart("Velocity, Acceleration, and Jerk", "Time (Seconds)", "Distance/Second (Inches/Second), Distance/Second/Second (Inches/Second^2), AND Distance/Second/Second/Second (Inches/Second^3)", VAJdataset);
 		Rpanel.add(new ChartPanel(VAJchart),BorderLayout.NORTH);
 		
-		//create xy line graph for position/distance
+		//create xy line graph for left position/distance
 		XYSeries leftDSeries = new XYSeries("Left Distance");
 		XYSeriesCollection dataLset = new XYSeriesCollection(leftVSeries);
 		dataLset.addSeries(leftDSeries);
@@ -110,7 +106,8 @@ public class GraphTrajectory {
 		LCPanel.getChart().setBackgroundPaint(Color.RED);
 		Lpanel.add(LCPanel,BorderLayout.SOUTH);
 		
-		XYSeries rightDSeries = new XYSeries("Left Distance");
+		//create xy line graph for right position/distance
+		XYSeries rightDSeries = new XYSeries("Right Distance");
 		XYSeriesCollection dataRset = new XYSeriesCollection(rightVSeries);
 		dataRset.addSeries(rightDSeries);
 		JFreeChart Rchart = ChartFactory.createXYLineChart("Right Side Distance and Velocity", "Time (Seconds)", "Distance (Inches) AND Distance/Second (Inches/Second", dataRset);
@@ -118,157 +115,127 @@ public class GraphTrajectory {
 		RCPanel.getChart().setBackgroundPaint(Color.BLUE);
 		Rpanel.add(new ChartPanel(Rchart),BorderLayout.SOUTH);
 		
+		//add panels to window
 		window.add(Lpanel, BorderLayout.WEST);
 		window.add(Rpanel, BorderLayout.EAST);
-		
-		window.addKeyListener(new KeyListener() {
-
-			@Override
-			public void keyPressed(KeyEvent e) {
-				
-				if(e.getKeyCode() == 10) {
-					
-					if(paused == true) {
-						
-						paused = false;
-						
-					}else {
-						
-						paused = true;
-						
-					}
-					
-				}else if(e.getKeyChar() == 'r') {
-					
-					button.doClick();
-					
-				}else if(e.getKeyChar() == '1') {
-					
-					traj = 1;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '2') {
-					
-					traj = 2;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '3') {
-					
-					traj = 3;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '4') {
-					
-					traj = 4;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '5') {
-					
-					traj = 5;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '6') {
-					
-					traj = 6;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '7') {
-					
-				}else if(e.getKeyChar() == '8') {
-					
-				}
-				
-				System.out.println(setup);
-				
-				
-			}
-
-			@Override
-			public void keyTyped(KeyEvent e) {
-				
-			}
-
-			@Override
-			public void keyReleased(KeyEvent e) {
-				
-			}
-			
-			
-			
-		});
 		
 		button.addKeyListener(new KeyListener() {
 
 			@Override
 			public void keyPressed(KeyEvent e) {
 				
-				if(e.getKeyCode() == 10) {
+				if(e.getKeyCode() == 10) { //enter/return key 
 					
 					if(paused == true) {
 						
 						paused = false;
+						label.setText(trajSet + traj + running);
 						
 					}else {
 						
 						paused = true;
+						label.setText(trajSet + traj + pause);
 						
 					}
 					
-				}else if(e.getKeyChar() == 'r') {
+				}else if(!paused) {
 					
-					button.doClick();
-					
-				}else if(e.getKeyChar() == '1') {
-					
-					traj = 1;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '2') {
-					
-					traj = 2;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '3') {
-					
-					traj = 3;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '4') {
-					
-					traj = 4;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '5') {
-					
-					traj = 5;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '6') {
-					
-					traj = 6;
-					setup = true;
-					firstTime = true;
-					
-				}else if(e.getKeyChar() == '7') {
-					
-				}else if(e.getKeyChar() == '8') {
-					
+					if(e.getKeyChar() == 'r') {
+						
+						if(setup) {
+							
+							if(wait1) {
+								
+								label.setFont(new Font(Font.DIALOG, Font.BOLD, 30));
+								
+							}else {
+								if(button.getText() == "Load") {
+									
+									button.doClick();
+									label.setText(trajSet + traj + running);
+									label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+									
+								}else {
+									
+									button.doClick();
+									label.setText(trajSet + traj + "." + pressR + " OR Select a Different Trajectory.");
+									label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+									firstTime = true;
+									
+	
+								}
+							}
+						}else {
+							
+							label.setText(baseInstructions);
+							label.setFont(new Font(Font.DIALOG, Font.BOLD, 30));
+							
+						}
+						
+					}else if(e.getKeyChar() == '1') {
+						
+						traj = 1;
+						setup = true;
+						firstTime = true;
+						label.setText(trajSet + traj + "." + pressR);
+						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+						
+					}else if(e.getKeyChar() == '2') {
+						
+						traj = 2;
+						setup = true;
+						firstTime = true;
+						label.setText(trajSet + traj + "." + pressR);
+						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+						
+					}else if(e.getKeyChar() == '3') {
+						
+						traj = 3;
+						setup = true;
+						firstTime = true;
+						label.setText(trajSet + traj + "." + pressR);
+						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+						
+					}else if(e.getKeyChar() == '4') {
+						
+						traj = 4;
+						setup = true;
+						firstTime = true;
+						label.setText(trajSet + traj + "." + pressR);
+						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+						
+					}else if(e.getKeyChar() == '5') {
+						
+						traj = 5;
+						setup = true;
+						firstTime = true;
+						label.setText(trajSet + traj + "." + pressR);
+						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+						
+					}else if(e.getKeyChar() == '6') {
+						
+						traj = 6;
+						setup = true;
+						firstTime = true;
+						label.setText(trajSet + traj + "." + pressR);
+						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+						
+					}else if(e.getKeyChar() == '7') {
+						
+					}else if(e.getKeyChar() == '8') {
+						
+					}else {
+						
+						if(!setup) {
+							
+							label.setText(baseInstructions);
+							label.setFont(new Font(Font.DIALOG, Font.BOLD, 30));
+							
+						}else {
+							
+						}
+					}
 				}
-				
-				System.out.println(e.getKeyCode());
-				System.out.println(setup);
-				
 			}
 
 			@Override
@@ -280,9 +247,6 @@ public class GraphTrajectory {
 			public void keyReleased(KeyEvent e) {
 				
 			}
-			
-			
-			
 		});
 		
 		button.addActionListener(new ActionListener() {
@@ -291,22 +255,27 @@ public class GraphTrajectory {
 			public void actionPerformed(ActionEvent e) {
 				if(button.getText().equals("Load")) {
 					
-					originalTime = System.currentTimeMillis();
 					button.setText("End");
+					
 					run = true;
-					disabled = false;
 					counter = 0;
+					originalTime = System.currentTimeMillis();
+					
 					Thread thread = new Thread() {
 						@Override public void run() {
 							while(run) {
+								
 								if(!paused) {
-									if(((System.currentTimeMillis()-originalTime)/1000) >= counter*.020 + .020) {
+									
+									if(((System.currentTimeMillis() - originalTime)/1000) >= counter*.020 + .020) {
+										
 										try {
 											switch(step) {
 											case 1:
 												if(trajectorySetup.setupisFinished()) {
 													step++;
 													trajectorySetup.setup(2);
+													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
 												}
@@ -315,6 +284,7 @@ public class GraphTrajectory {
 												if(trajectorySetup.setupisFinished()) {
 													step++;
 													trajectorySetup.setup(3);
+													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
 												}
@@ -323,6 +293,7 @@ public class GraphTrajectory {
 												if(trajectorySetup.setupisFinished()) {
 													step++;
 													trajectorySetup.setup(4);
+													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
 												}
@@ -331,6 +302,7 @@ public class GraphTrajectory {
 												if(trajectorySetup.setupisFinished()) {
 													step++;
 													trajectorySetup.setup(5);
+													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
 												}
@@ -377,15 +349,22 @@ public class GraphTrajectory {
 						@Override public void run() {
 							button.setText("Load");
 							run = false;
-							disabled = true;
 							trajectorySetup.resetCounters();
 							
 							step = 1;
+							wait1 = true;
 							
 							while(!run) {
 								if(setup && firstTime) {
 									
+									trajectorySetup.setup(2);
+									trajectorySetup.setup(3);
+									trajectorySetup.setup(4);
+									trajectorySetup.setup(5);
 									trajectorySetup.setup(1);
+
+									label.setText(trajSet + traj + "." + pressR);
+									wait1 = false;
 									firstTime = false;
 								}
 								leftSeries.clear();
@@ -401,9 +380,16 @@ public class GraphTrajectory {
 								
 								leftDSeries.clear();
 								rightDSeries.clear();
+								trajectorySetup.iTime = 0;
 								System.out.print("");
 							}
 							
+							while(!trajectorySetup.checkDone) {
+								
+							}
+							
+							System.out.print("");
+								
 						}
 					};
 					starterThread.start();
