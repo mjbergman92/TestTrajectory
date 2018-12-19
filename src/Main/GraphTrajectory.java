@@ -403,22 +403,24 @@ public class GraphTrajectory {
 									wait1 = false;
 									firstTime = false;
 								}
-								leftSeries.clear();
-								rightSeries.clear();
-								robot.clear();
-								lineAcross.clear();
-								leftVSeries.clear();
-								rightVSeries.clear();
-								leftASeries.clear();
-								rightASeries.clear();
-								leftJSeries.clear();
-								rightJSeries.clear();
 								
-								leftDSeries.clear();
-								rightDSeries.clear();
-								trajectorySetup.iTime = 0;
-								System.out.print("");
 							}
+									
+							leftSeries.clear();
+							rightSeries.clear();
+							robot.clear();
+							lineAcross.clear();
+							leftVSeries.clear();
+							rightVSeries.clear();
+							leftASeries.clear();
+							rightASeries.clear();
+							leftJSeries.clear();
+							rightJSeries.clear();
+							
+							leftDSeries.clear();
+							rightDSeries.clear();
+							trajectorySetup.iTime = 0;
+							System.out.print("");
 							
 							while(!trajectorySetup.checkDone) {
 								
@@ -439,6 +441,15 @@ public class GraphTrajectory {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				
+				if(button.getText() != "Load"){
+					
+					button.doClick();
+					label.setText(trajSet + traj + "." + pressR + " OR Select a Different Trajectory.");
+					label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
+					firstTime = true;
+					
+
+				}
 				
 				Point2D p = chartPanel.translateScreenToJava2D(new ChartMouseEvent(chart, e, null).getTrigger().getPoint());
 				Rectangle2D plotArea = chartPanel.getScreenDataArea();
@@ -525,7 +536,6 @@ public class GraphTrajectory {
 				
 				coordinateWindow.setLocation(window.getLocation().x + 675, window.getLocation().y + 55);
 				
-				
 				heading.addKeyListener(new KeyListener() {
 
 					@Override
@@ -583,6 +593,18 @@ public class GraphTrajectory {
 							pw.flush();
 							pw.close();
 							
+							leftSeries.clear();
+							rightSeries.clear();
+							traj = Integer.parseInt(trajBox.getSelectedItem().toString());
+							trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()));
+							while(!trajectorySetup.setupisFinished()) {
+								
+								double leftX = trajectorySetup.leftXTrajectory(), leftY = trajectorySetup.leftYTrajectory(), rightX = trajectorySetup.rightXTrajectory(), rightY = trajectorySetup.rightYTrajectory();
+								leftSeries.add(leftX, leftY);
+								rightSeries.add(rightX, rightY);
+								
+							}
+							
 						}
 						
 					}
@@ -594,6 +616,139 @@ public class GraphTrajectory {
 					}
 					
 					
+					
+				});
+				
+				trajBox.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						
+						leftSeries.clear();
+						rightSeries.clear();
+						traj = Integer.parseInt(trajBox.getSelectedItem().toString());
+						trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()));
+						while(!trajectorySetup.setupisFinished()) {
+							
+							double leftX = trajectorySetup.leftXTrajectory(), leftY = trajectorySetup.leftYTrajectory(), rightX = trajectorySetup.rightXTrajectory(), rightY = trajectorySetup.rightYTrajectory();
+							leftSeries.add(leftX, leftY);
+							rightSeries.add(rightX, rightY);
+							
+						}
+						
+						Scanner scanner;
+						String lines[] = {"", "", ""};
+						try {
+							int i = 0;
+							scanner = new Scanner(new File("trajectory" + trajBox.getSelectedItem() + "/points" + "/trajectory" + trajBox.getSelectedItem() + "step" + stepBox.getSelectedItem() + "points.csv"));
+							while(scanner.hasNextLine()){
+					
+								lines[i] = scanner.nextLine();
+								i++;
+								
+							}
+							scanner.close();
+							String values[] = lines[Integer.parseInt(waypointNumberBox.getSelectedItem().toString()) - 1].split(",");
+							xCoordinate.setText(values[0]);
+							yCoordinate.setText(values[1]);
+							heading.setText((Double.parseDouble(values[2]) / (2 * Math.PI)) * 360 + "");
+							
+						} catch (FileNotFoundException e1) {
+							
+							e1.printStackTrace();
+							
+						}
+						
+						
+					}
+					
+				});
+				
+				stepBox.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						
+						leftSeries.clear();
+						rightSeries.clear();
+						traj = Integer.parseInt(trajBox.getSelectedItem().toString());
+						trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()));
+						while(!trajectorySetup.setupisFinished()) {
+							
+							double leftX = trajectorySetup.leftXTrajectory(), leftY = trajectorySetup.leftYTrajectory(), rightX = trajectorySetup.rightXTrajectory(), rightY = trajectorySetup.rightYTrajectory();
+							leftSeries.add(leftX, leftY);
+							rightSeries.add(rightX, rightY);
+							
+						}
+						
+						Scanner scanner;
+						String lines[] = {"", "", ""};
+						try {
+							int i = 0;
+							scanner = new Scanner(new File("trajectory" + trajBox.getSelectedItem() + "/points" + "/trajectory" + trajBox.getSelectedItem() + "step" + stepBox.getSelectedItem() + "points.csv"));
+							while(scanner.hasNextLine()){
+					
+								lines[i] = scanner.nextLine();
+								i++;
+								
+							}
+							scanner.close();
+							String values[] = lines[Integer.parseInt(waypointNumberBox.getSelectedItem().toString()) - 1].split(",");
+							xCoordinate.setText(values[0]);
+							yCoordinate.setText(values[1]);
+							heading.setText((Double.parseDouble(values[2]) / (2 * Math.PI)) * 360 + "");
+							
+						} catch (FileNotFoundException e1) {
+							
+							e1.printStackTrace();
+							
+						}
+						
+					}
+					
+				});
+				
+				waypointNumberBox.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						
+						leftSeries.clear();
+						rightSeries.clear();
+						traj = Integer.parseInt(trajBox.getSelectedItem().toString());
+						trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()));
+						while(!trajectorySetup.setupisFinished()) {
+							
+							double leftX = trajectorySetup.leftXTrajectory(), leftY = trajectorySetup.leftYTrajectory(), rightX = trajectorySetup.rightXTrajectory(), rightY = trajectorySetup.rightYTrajectory();
+							leftSeries.add(leftX, leftY);
+							rightSeries.add(rightX, rightY);
+							
+						}
+						
+						Scanner scanner;
+						String lines[] = {"", "", ""};
+						try {
+							int i = 0;
+							scanner = new Scanner(new File("trajectory" + trajBox.getSelectedItem() + "/points" + "/trajectory" + trajBox.getSelectedItem() + "step" + stepBox.getSelectedItem() + "points.csv"));
+							while(scanner.hasNextLine()){
+					
+								lines[i] = scanner.nextLine();
+								i++;
+								
+							}
+							scanner.close();
+							String values[] = lines[Integer.parseInt(waypointNumberBox.getSelectedItem().toString()) - 1].split(",");
+							xCoordinate.setText(values[0]);
+							yCoordinate.setText(values[1]);
+							heading.setText((Double.parseDouble(values[2]) / (2 * Math.PI)) * 360 + "");
+							
+						} catch (FileNotFoundException e1) {
+							
+							e1.printStackTrace();
+							
+						}
+						
+					}
 					
 				});
 				

@@ -258,7 +258,7 @@ public class TrajectorySetup {
 				if(in.hasNextLine()) {
 				
 					String inLine = in.nextLine();
-					System.out.println(inLine);
+					//System.out.println(inLine);
 					String lines[] = inLine.split(",");
 					switch(i + 1) {
 					
@@ -283,7 +283,7 @@ public class TrajectorySetup {
 					for(int j = 0; j < 3; j++) {
 						
 						String inLine = in.nextLine();
-						System.out.println(inLine);
+						//System.out.println(inLine);
 						String lines[] = inLine.split(",");
 						switch(j + 1) {
 						
