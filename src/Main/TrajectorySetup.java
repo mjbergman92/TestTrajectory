@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import jaci.pathfinder.Pathfinder;
@@ -17,9 +18,9 @@ import jaci.pathfinder.modifiers.TankModifier;
 
 public class TrajectorySetup {
 	
-	//assumes the pivot is in the "exact" center of the robot
-	double wheelBase_width = 36, wheelBase_length = 32;
-	double robot_width = 40, robot_length = 38;
+	double wheelBase_width = 16.375, wheelBase_length = 16;
+	double robot_width = 18, robot_length = 20;
+	double lengthToPivot = -6; //positive from center of robot to front, negative if length from center to back, 0 if in center
 	Trajectory left, right;
 	Trajectory.Segment segLeftX, segLeftY, segRightX, segRightY, segLV, segRV, segLA, segRA, segLJ, segRJ, segLP, segRP, segTime, segTraj;
 	int i1, i2, i3, i4, iLV, iRV, iLA, iRA, iLJ, iRJ, iLP, iRP, iTime, iTraj;
@@ -30,9 +31,11 @@ public class TrajectorySetup {
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
 	public int posTraj;
 	Waypoint[] points;
-	private final double absMaxVelocity = 96;
+	private final double absMaxVelocity = 16;
 	private double setVelocity = 0;
 	public boolean checkDone = false;
+	private double robotLoopTime = 0.020;
+	public boolean[] firstTimeThroughDone = {false, false, false, false, false, false, false, false};
 	
 	
 	public TrajectorySetup() {
@@ -41,19 +44,20 @@ public class TrajectorySetup {
 	
 	public void setup(int step) {
 		
+		
 		checkDone = false;
 		posTraj = GraphTrajectory.traj;
 		resetCounters();
-		waypointsStep(step);
+		setPoints(step);
 		
-		if(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv").canRead() && new File("velocity" + step + posTraj + ".csv").canRead()) {
+		if(firstTimeThroughDone[posTraj - 1]) {
 			
-			Trajectory matches = Pathfinder.readFromCSV(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv"));
+			testTrajectory(step);
 			Scanner scanner;
 			double velocity = 0;
 			try {
 				
-				scanner = new Scanner(new File("velocity" + step + posTraj + ".csv"));
+				scanner = new Scanner(new File("trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv"));
 				velocity = Double.parseDouble(scanner.next());
 				scanner.close();
 				
@@ -62,51 +66,111 @@ public class TrajectorySetup {
 				e1.printStackTrace();
 				
 			}
+			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, velocity, 180, 400);
+			trajectory = Pathfinder.generate(points, configuration);
 			
-			Trajectory.Config configurationMatches = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, velocity, 180, 400);
-			Trajectory possibleTrajectory = Pathfinder.generate(points, configurationMatches);
-			DecimalFormat numberFormat = new DecimalFormat("#.000"); 
-			double matchesTest = Double.parseDouble(numberFormat.format(matches.segments[matches.length()/3].heading));
-			double possibleTest = Double.parseDouble(numberFormat.format(possibleTrajectory.segments[possibleTrajectory.length()/3].heading));
-			
-			if(matchesTest == possibleTest) {
-				
-				trajectory = possibleTrajectory;
-				
-			}else {
-				
-				testTrajectory(step);
-				Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, setVelocity, 180, 400);
-				trajectory = Pathfinder.generate(points, configuration);
-				Pathfinder.writeToCSV(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv"), trajectory);
-				
-				try {
-					
-					FileWriter fw = new FileWriter("velocity" + step + posTraj + ".csv");
-					BufferedWriter bw = new BufferedWriter(fw);
-					PrintWriter pw = new PrintWriter(bw);
-					
-					pw.print(setVelocity);
-					pw.flush();
-					pw.close();
-					
-				} catch (IOException e) {
-
-					e.printStackTrace();
-					
+			resetCounters();
+			TankModifier modifier = new TankModifier(trajectory);
+			modifier.modify(wheelBase_width);
+			if(posTraj != 7 && posTraj != 8) {
+				if(step == 1) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}else if(step == 2) {
+					left = modifier.getRightTrajectory();
+					right = modifier.getLeftTrajectory();
+					backward = true;
+				}else if(step == 3) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}else if(step == 4) {
+					left = modifier.getRightTrajectory();
+					right = modifier.getLeftTrajectory();
+					backward = true;
+				}else if(step == 5) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}
+			}else if(posTraj == 7 || posTraj == 8){
+				if(step == 1) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}else if(step == 2) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}else if(step == 3) {
+					left = modifier.getRightTrajectory();
+					right = modifier.getLeftTrajectory();
+					backward = true;
 				}
 			}
 			
-		}else {
+			
+		}else { 
+			
+			new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv").delete();
+			new File("trajectory" + posTraj + "/right" + "trajectorystep" + step + "traj" + posTraj + ".csv").delete();
+			new File("trajectory" + posTraj + "left" + "trajectorystep" + step + "traj" + posTraj + ".csv").delete();
+			new File("trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv").delete();
+
 			
 			testTrajectory(step);
-			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, setVelocity, 180, 400);
+			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, setVelocity, 180, 400);
 			trajectory = Pathfinder.generate(points, configuration);
-			Pathfinder.writeToCSV(new File("trajectoryStep#" + step + "Traj#" + posTraj + ".csv"), trajectory);
+			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv"), trajectory);
+			
+			resetCounters();
+			TankModifier modifier = new TankModifier(trajectory);
+			modifier.modify(wheelBase_width);
+			if(posTraj != 7 && posTraj != 8) {
+				if(step == 1) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}else if(step == 2) {
+					left = modifier.getRightTrajectory();
+					right = modifier.getLeftTrajectory();
+					backward = true;
+				}else if(step == 3) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}else if(step == 4) {
+					left = modifier.getRightTrajectory();
+					right = modifier.getLeftTrajectory();
+					backward = true;
+				}else if(step == 5) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}
+			}else if(posTraj == 7 || posTraj == 8){
+				if(step == 1) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}else if(step == 2) {
+					left = modifier.getLeftTrajectory();
+					right = modifier.getRightTrajectory();
+					backward = false;
+				}else if(step == 3) {
+					left = modifier.getRightTrajectory();
+					right = modifier.getLeftTrajectory();
+					backward = true;
+				}
+			}
+			
+			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/right" + "trajectorystep" + step + "traj" + posTraj + ".csv"), right);
+			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/left" + "trajectorystep" + step + "traj" + posTraj + ".csv"), left);
 			
 			try {
 				
-				FileWriter fw = new FileWriter("velocity" + step + posTraj + ".csv");
+				FileWriter fw = new FileWriter("trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv");
 				BufferedWriter bw = new BufferedWriter(fw);
 				PrintWriter pw = new PrintWriter(bw);
 				
@@ -121,47 +185,6 @@ public class TrajectorySetup {
 			}
 		}
 		
-		resetCounters();
-		TankModifier modifier = new TankModifier(trajectory);
-		modifier.modify(wheelBase_width);
-		if(posTraj != 7 && posTraj != 8) {
-			if(step == 1) {
-				left = modifier.getLeftTrajectory();
-				right = modifier.getRightTrajectory();
-				backward = false;
-			}else if(step == 2) {
-				left = modifier.getRightTrajectory();
-				right = modifier.getLeftTrajectory();
-				backward = true;
-			}else if(step == 3) {
-				left = modifier.getLeftTrajectory();
-				right = modifier.getRightTrajectory();
-				backward = false;
-			}else if(step == 4) {
-				left = modifier.getRightTrajectory();
-				right = modifier.getLeftTrajectory();
-				backward = true;
-			}else if(step == 5) {
-				left = modifier.getLeftTrajectory();
-				right = modifier.getRightTrajectory();
-				backward = false;
-			}
-		}else if(posTraj == 7 || posTraj == 8){
-			if(step == 1) {
-				left = modifier.getLeftTrajectory();
-				right = modifier.getRightTrajectory();
-				backward = false;
-			}else if(step == 2) {
-				left = modifier.getLeftTrajectory();
-				right = modifier.getRightTrajectory();
-				backward = false;
-			}else if(step == 3) {
-				left = modifier.getRightTrajectory();
-				right = modifier.getLeftTrajectory();
-				backward = true;
-			}
-		}
-		
 		checkDone = true;
 		
 	}
@@ -169,7 +192,7 @@ public class TrajectorySetup {
 	private void testTrajectory(int step) {
 				
 		long originalTime = System.currentTimeMillis();
-		int countTimeTest = 1;
+		double countTimeTest = 1;
 		boolean good;
 		while(countTimeTest <= absMaxVelocity) {
 			
@@ -178,7 +201,7 @@ public class TrajectorySetup {
 				resetCounters();
 				double test = countTimeTest;
 				//System.out.println(test);
-				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, 0.020, test, 180, 400);
+				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, test, 180, 400);
 				Trajectory trajectory = Pathfinder.generate(points, config);
 				TankModifier modifier = new TankModifier(trajectory);
 				modifier.modify(wheelBase_width);
@@ -214,356 +237,102 @@ public class TrajectorySetup {
 					
 				}			
 				
-				countTimeTest++;
+				countTimeTest = countTimeTest + 0.25;
 				
 			}
 		}
 	}
 	
-	private void waypointsStep(int step) {
-		switch(posTraj) {
-		case 1: //center left switch
-			
-			this.getTraj1Points(step);
-			
-			break;
-		case 2: //center right switch
-			
-			this.getTraj2Points(step);
-			
-			break;
-		case 3: //left side switch
-			
-			this.getTraj3Points(step);
-			
-			break;
-		case 4: //right side switch
-			
-			this.getTraj4Points(step);
-			
-			break;
-		case 5: //left side scale
-			
-			this.getTraj5Points(step);
-			
-			break;
-		case 6: //right side scale
-			
-			this.getTraj6Points(step);
-			
-			break;
-		case 7: //left side scale cross
-			
-			this.getTraj7Points(step);
-			
-			break;
-		case 8: //right side scale cross
-			
-			this.getTraj8Points(step);
-			
-			break;
-	
-		}
-	}
-	
-	private void getTraj1Points(int step) {
+	private void setPoints(int step) {
 		
-		if(step == 1) {
+		Scanner in;
+		try {
 			
-			points = new Waypoint[] {
-					new Waypoint(robot_length/2,(-robot_width/2)+12,0),
-					new Waypoint(140 - (robot_length/2), 72 - (robot_width/2),0)	
-				};
-			
-		}else if(step == 2) {
-			
-			
-			points = new Waypoint[] {
-					new Waypoint(140 - (robot_length/2), 72 -(robot_width/2),0),
-					new Waypoint(robot_length/2, 0, 0)
-				};
-			
-		}else if(step == 3) {
-			
-			points = new Waypoint[] {
-					new Waypoint(robot_length/2, 0, 0),
-					new Waypoint(100 - robot_length/2,0,0)
-				};
-			
-		}else if(step == 4) {
-			
-			points = new Waypoint[] {
-					new Waypoint(100 - robot_length/2,0,0),
-					new Waypoint(robot_length/2, 0, 0)
-				};
-			
-		}else if(step == 5) {
-			
-			points = new Waypoint[] {
-					new Waypoint((robot_length/2), 0, 0),
-					new Waypoint(140 - (robot_length/2), 72 -(wheelBase_width/2),0)
-				};
-			
-		}
+			in = new Scanner(new File("trajectory" + posTraj + "/points" + "/trajectory" + posTraj + "step" + step + "points.csv"));
 		
-	}
-	
-	private void getTraj2Points(int step) {
-		
-		if(step == 1) {
+				
+			ArrayList<String[]> waypoints = new ArrayList<String[]>();
+			for(int i = 0; i < 3; i++) {
+				
+				
+				if(in.hasNextLine()) {
+				
+					String inLine = in.nextLine();
+					System.out.println(inLine);
+					String lines[] = inLine.split(",");
+					switch(i + 1) {
+					
+					case 1:
+						waypoints.add(0, lines);;
+						break;
+					case 2:
+						waypoints.add(1, lines);
+						break;
+					case 3:
+						waypoints.add(2, lines);
+						break;
+					
+					}
+					
+				}else {
+					
+					in = new Scanner(new File("default_points/defaultpoints.csv"));
+					
+					waypoints = new ArrayList<String[]>();
+					
+					for(int j = 0; j < 3; j++) {
+						
+						String inLine = in.nextLine();
+						System.out.println(inLine);
+						String lines[] = inLine.split(",");
+						switch(j + 1) {
+						
+						case 1:
+							waypoints.add(0, lines);;
+							break;
+						case 2:
+							waypoints.add(1, lines);
+							break;
+						case 3:
+							waypoints.add(2, lines);
+							break;
+						
+						}
+						
+					}
+					
+					i = 3;
+					
+				}
+				
+			}
+			
+			
+			
+			float xPoint1 = Float.parseFloat(waypoints.get(0)[0]);
+			float yPoint1 = Float.parseFloat(waypoints.get(0)[1]);
+			float hPoint1 = Float.parseFloat(waypoints.get(0)[2]);
+			float xPoint2 = Float.parseFloat(waypoints.get(1)[0]);
+			float yPoint2 = Float.parseFloat(waypoints.get(1)[1]);
+			float hPoint2 = Float.parseFloat(waypoints.get(1)[2]);
+			float xPoint3 = Float.parseFloat(waypoints.get(2)[0]);
+			float yPoint3 = Float.parseFloat(waypoints.get(2)[1]);
+			float hPoint3 = Float.parseFloat(waypoints.get(2)[2]);
+			
 			
 			points = new Waypoint[] {
-					new Waypoint(robot_length/2,(-robot_width/2)+12,0),
-					new Waypoint(140 - (robot_length/2),-72+(robot_width/2),0)
+					new Waypoint(xPoint1, yPoint1, hPoint1),
+					new Waypoint(xPoint2, yPoint2, hPoint2),
+					new Waypoint(xPoint3, yPoint3, hPoint3)
 				};
+
 			
-		}else if(step == 2) {
+			in.close();
 			
-			points = new Waypoint[] {
-					new Waypoint(140 - (robot_length/2),-72+(robot_width/2),0),
-					new Waypoint(robot_length/2, 0, 0)
-				};
-			
-		}else if(step == 3) {
-			
-			points = new Waypoint[] {
-					new Waypoint(robot_length/2, 0, 0),
-					new Waypoint(100 - robot_length/2,0,0)
-				};
-			
-		}else if(step == 4) {
-			
-			points = new Waypoint[] {
-					new Waypoint(100 - robot_length/2,0,0),
-					new Waypoint(robot_length/2, 0, 0)
-				};
-			
-		}else if(step == 5) {
-			
-			points = new Waypoint[] {
-					new Waypoint((robot_length/2), 0, 0),
-					new Waypoint(140 - (robot_length/2),-72+(wheelBase_width/2),0)
-				};
-			
-		}
-		
-	}
-	
-	private void getTraj3Points(int step) {
-		
-		if(step == 1) {
-			
-			points = new Waypoint[] {
-					new Waypoint((robot_length/2),-(robot_width/2)+132,0),
-					new Waypoint(120, 135, 0),
-					new Waypoint(168, 76.44 + (robot_length/2),Pathfinder.d2r(270))
-				};
-			
-		}else if(step == 2) {
-			
-			points = new Waypoint[] {
-					new Waypoint(168, 76.44 + (robot_length/2),Pathfinder.d2r(270)),
-					new Waypoint(245, 135,Pathfinder.d2r(-135))
-				};
-			
-		}else if(step == 3) {
-			
-			points = new Waypoint[] {
-					new Waypoint(245, 135,Pathfinder.d2r(-135)),
-					new Waypoint(229, 90,Pathfinder.d2r(-180+45))
-				};
-			
-		}else if(step == 4) {
-			
-			points = new Waypoint[] {
-					new Waypoint(229, 90,Pathfinder.d2r(-180+45)),
-					new Waypoint(245, 135,Pathfinder.d2r(-135))
-				};
-			
-		}else if(step == 5) {
-			
-			points = new Waypoint[] {
-					new Waypoint(245, 135,Pathfinder.d2r(-135)),
-					new Waypoint(168, 76.44 + (robot_length/2),Pathfinder.d2r(270))
-				};
-			
-		}
-		
-	}
-	
-	private void getTraj4Points(int step) {
-		
-		if(step == 1) {
-			
-			points = new Waypoint[] {
-					new Waypoint((robot_length/2),(robot_width/2)-132,0),
-					new Waypoint(140, -125,Pathfinder.d2r(22.5)),
-					new Waypoint(168, -76.44 - (robot_length/2),Pathfinder.d2r(90))
-				};
-			
-		}else if(step == 2) {
-			
-			points = new Waypoint[] {
-					new Waypoint(168, -76.44 - (robot_length/2),Pathfinder.d2r(90)),
-					new Waypoint(243, -120,Pathfinder.d2r(180 - 40))
-				};
-			
-		}else if(step == 3) {
-			
-			points = new Waypoint[] {
-					new Waypoint(243, -120,Pathfinder.d2r(180 - 40)),
-					new Waypoint(209, -70 ,Pathfinder.d2r(180-45))
-				};
-			
-		}else if(step == 4) {
-			
-			points = new Waypoint[] {
-					new Waypoint(209, -70 ,Pathfinder.d2r(180-45)),
-					new Waypoint(243, -120,Pathfinder.d2r(180 - 40))
-				};
-			
-		}else if(step == 5) {
-			
-			points = new Waypoint[] {
-					new Waypoint(243, -120,Pathfinder.d2r(180 - 40)),
-					new Waypoint(168, -76.44 - (robot_length/2),Pathfinder.d2r(90))
-				};
-			
-		}
-		
-	}
-	
-	private void getTraj5Points(int step) {
-		
-		if(step == 1) {
-			
-			points = new Waypoint[] {
-					new Waypoint((robot_length/2),-(robot_width/2)+132,0),
-					new Waypoint(280, 130, Pathfinder.d2r(-2.5)),
-					new Waypoint(314, 90, Pathfinder.d2r(270))
-				};
-			
-		}else if(step == 2) {
-			
-			points = new Waypoint[] {
-					new Waypoint(314, 90, Pathfinder.d2r(270)),
-					new Waypoint(314, 120, Pathfinder.d2r(270))
-				};
-			
-		}else if(step == 3) {
-			
-			points = new Waypoint[] {
-					new Waypoint(314, 120, Pathfinder.d2r(270)),
-					new Waypoint(250, 90, Pathfinder.d2r(225)),
-					new Waypoint(209, 72-6.5,Pathfinder.d2r(180))
-				};
-			
-		}else if(step == 4) {
-			
-			points = new Waypoint[] {
-					new Waypoint(209, 72-6.5,Pathfinder.d2r(180)),
-					new Waypoint(250, 90, Pathfinder.d2r(225)),
-					new Waypoint(314, 120, Pathfinder.d2r(270))
-				};
-			
-		}else if(step == 5) {
-			
-			points = new Waypoint[] {
-					new Waypoint(314, 120, Pathfinder.d2r(270)),
-					new Waypoint(314, 90, Pathfinder.d2r(270))
-				};
-			
-		}
-		
-	}
-	
-	private void getTraj6Points(int step) {
-		
-		if(step == 1) {
-			
-			points = new Waypoint[] {
-					new Waypoint((robot_length/2),(robot_width/2)-132,0),
-					new Waypoint(280, -130, Pathfinder.d2r(2.5)),
-					new Waypoint(314, -90, Pathfinder.d2r(90))
-				};
-			
-		}else if(step == 2) {
-			
-			points = new Waypoint[] {
-					new Waypoint(314, -90, Pathfinder.d2r(90)),
-					new Waypoint(314, -120, Pathfinder.d2r(90))
-				};
-			
-		}else if(step == 3) {
-			
-			points = new Waypoint[] {
-					new Waypoint(314, -120, Pathfinder.d2r(90)),
-					new Waypoint(250, -90, Pathfinder.d2r(135)),
-					new Waypoint(209, -72+6.5,Pathfinder.d2r(180))
-				};
-			
-		}else if(step == 4) {
-			
-			points = new Waypoint[] {
-					new Waypoint(209, -72+6.5,Pathfinder.d2r(180)),
-					new Waypoint(250, -90, Pathfinder.d2r(135)),
-					new Waypoint(314, -120, Pathfinder.d2r(90))
-				};
-			
-		}else if(step == 5) {
-			
-			points = new Waypoint[] {
-					new Waypoint(314, -120, Pathfinder.d2r(90)),
-					new Waypoint(314, -90, Pathfinder.d2r(90))
-				};
-			
-		}
-	}
-	
-	private void getTraj7Points(int step) {
-		
-		if(step == 1) {
-			
-		}else if(step == 2) {
-			
-		}else if(step == 3) {
-			
-		}else if(step == 4) {
-			
-		}else if(step == 5) {
-			
-		}
-		
-		/*
-		}else if(posTraj == 7) {//left side scale cross
-			points = new Waypoint[] {
-				new Waypoint((robot_length/2),-(robot_width/2)+132,0),
-				new Waypoint(185, 72 + 4 + (robot_width/2),Pathfinder.d2r(0)),
-				new Waypoint(209 + 4 + (robot_width/2), 70, Pathfinder.d2r(-90))
-				remove line ? new Waypoint(300, -90 + 7, Pathfinder.d2r(0))
-			};*/
-				/*
-		}else if(posTraj == 7) {	
-			points = new Waypoint[] {
-				new Waypoint(209 + 4 + (robot_width/2), 70, Pathfinder.d2r(-90)),
-				new Waypoint(209 + 4 + (robot_width/2), -50, Pathfinder.d2r(-90)),
-				new Waypoint(300, -90 + 7, Pathfinder.d2r(0))
-			};*/
-		
-	}
-	
-	private void getTraj8Points(int step) {
-		
-		if(step == 1) {
-			
-		}else if(step == 2) {
-			
-		}else if(step == 3) {
-			
-		}else if(step == 4) {
-			
-		}else if(step == 5) {
-			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			e.getMessage();
 		}
 		
 	}
@@ -675,7 +444,7 @@ public class TrajectorySetup {
 	public double timePassed() {
 		//number of segments * timeStep = total time passed
 			iTime++;
-		return  iTime * 0.020;
+		return  iTime * robotLoopTime;
 	}
 	
 	public void robotBox(double lx, double ly, double rx, double ry) {
@@ -691,7 +460,8 @@ public class TrajectorySetup {
 		double lengthDiff = 0;
 		double shortLength = 0;
 		double longLength = 0;
-		double lengthMult = robot_length/2;
+		double lengthMultBack = robot_length/2 + lengthToPivot;
+		double lengthMultFront = robot_length/2 - lengthToPivot;
 		double widthMult = (robot_width - wheelBase_width)/2;
 		double angle = segTraj.heading;
 		while(angle > Math.PI) {
@@ -705,39 +475,39 @@ public class TrajectorySetup {
 			if(lx > rx) {
 				left1x = lx + widthMult;
 				right1x = rx - widthMult;
-				left1y = ly - lengthMult;
-				right1y = ry - lengthMult;
+				left1y = ly - lengthMultFront;
+				right1y = ry - lengthMultFront;
 				left2x = lx + widthMult;
 				right2x = rx - widthMult;
-				left2y = ly + lengthMult;
-				right2y = ry + lengthMult;
+				left2y = ly + lengthMultBack;
+				right2y = ry + lengthMultBack;
 			}else {
 				left1x = lx - widthMult;
 				right1x = rx + widthMult;
-				left1y = ly + lengthMult;
-				right1y = ry + lengthMult;
+				left1y = ly + lengthMultFront;
+				right1y = ry + lengthMultFront;
 				left2x = lx - widthMult;
 				right2x = rx + widthMult;
-				left2y = ly - lengthMult;
-				right2y = ry - lengthMult;
+				left2y = ly - lengthMultBack;
+				right2y = ry - lengthMultBack;
 			}
 		}else if(lx == rx) {
 			if(ly > ry) {
-				left1x = lx + lengthMult;
-				right1x = rx + lengthMult;
+				left1x = lx + lengthMultFront;
+				right1x = rx + lengthMultFront;
 				left1y = ly + widthMult;
 				right1y = ry - widthMult;
-				left2x = lx - lengthMult;
-				right2x = rx - lengthMult;
+				left2x = lx - lengthMultFront;
+				right2x = rx - lengthMultFront;
 				left2y = ly + widthMult;
 				right2y = ry - widthMult;
 			}else {
-				left1x = lx - lengthMult;
-				right1x = rx - lengthMult;
+				left1x = lx - lengthMultFront;
+				right1x = rx - lengthMultFront;
 				left1y = ly - widthMult;
 				right1y = ry + widthMult;
-				left2x = lx + lengthMult;
-				right2x = rx + lengthMult;
+				left2x = lx + lengthMultBack;
+				right2x = rx + lengthMultBack;
 				left2y = ly - widthMult;
 				right2y = ry + widthMult;
 			}
@@ -762,40 +532,57 @@ public class TrajectorySetup {
 					angle = Math.abs(angle);
 					x2 = widthMult / Math.sin(angle);
 					lengthDiff = widthMult / Math.tan(angle);
-					shortLength = lengthMult - lengthDiff;
-					longLength = lengthMult + lengthDiff;
+					shortLength = lengthMultFront - lengthDiff;
+					longLength = lengthMultBack + lengthDiff;
 					xOutside = shortLength * Math.cos(angle) + x2;
 					xInside = longLength * Math.cos(angle) - x2;
 					yOutside = shortLength * Math.sin(angle);
 					yInside = longLength * Math.sin(angle);
 					
 					left1x = lx + xOutside;
-					right1x = rx + xInside;
 					left1y = ly - yOutside;
-					right1y = ry - yInside;
 					left2x = lx - xInside;
-					right2x = rx - xOutside;
 					left2y = ly + yInside;
+					
+					shortLength = lengthMultBack - lengthDiff;
+					longLength = lengthMultFront + lengthDiff;
+					xOutside = shortLength * Math.cos(angle) + x2;
+					xInside = longLength * Math.cos(angle) - x2;
+					yOutside = shortLength * Math.sin(angle);
+					yInside = longLength * Math.sin(angle);
+					
+					right1x = rx + xInside;
+					right1y = ry - yInside;
+					right2x = rx - xOutside;
 					right2y = ry + yOutside;
+					
 				}else{ 								//angle > 0 and < about 1.57 
 					angle = Math.abs(angle);
 					angle = (Math.PI / 2) - angle;
 					x2 = widthMult / Math.sin(angle);
 					lengthDiff = widthMult / Math.tan(angle);
-					shortLength = lengthMult - lengthDiff;
-					longLength = lengthMult + lengthDiff;
+					shortLength = lengthMultFront - lengthDiff;
+					longLength = lengthMultBack + lengthDiff;
 					xOutside = shortLength * Math.sin(angle);
 					xInside = longLength * Math.sin(angle);
 					yOutside = shortLength * Math.cos(angle) + x2;  
 					yInside = longLength * Math.cos(angle) - x2;
 					
 					left1x = lx + xOutside;
-					right1x = rx + xInside;
 					left1y = ly + yOutside;
-					right1y = ry + yInside;
 					left2x = lx - xInside;
-					right2x = rx - xOutside;
 					left2y = ly - yInside;
+					
+					shortLength = lengthMultBack - lengthDiff;
+					longLength = lengthMultFront + lengthDiff;
+					xOutside = shortLength * Math.sin(angle);
+					xInside = longLength * Math.sin(angle);
+					yOutside = shortLength * Math.cos(angle) + x2;  
+					yInside = longLength * Math.cos(angle) - x2;
+					
+					right1x = rx + xInside;
+					right1y = ry + yInside;
+					right2x = rx - xOutside;
 					right2y = ry - yOutside;
 					
 				}
@@ -805,20 +592,28 @@ public class TrajectorySetup {
 					angle = angle - (Math.PI / 2);
 					x2 = widthMult / Math.sin(angle);
 					lengthDiff = widthMult / Math.tan(angle);
-					shortLength = lengthMult - lengthDiff;
-					longLength = lengthMult + lengthDiff;
+					shortLength = lengthMultFront - lengthDiff;
+					longLength = lengthMultBack + lengthDiff;
 					xOutside = shortLength * Math.sin(angle);
 					xInside = longLength * Math.sin(angle);
 					yOutside = shortLength * Math.cos(angle) + x2;  
 					yInside = longLength * Math.cos(angle) - x2;
 					
 					left1x = lx - xOutside;
-					right1x = rx - xInside;
 					left1y = ly - yOutside;
-					right1y = ry - yInside;
 					left2x = lx + xInside;
-					right2x = rx + xOutside;
 					left2y = ly + yInside;
+					
+					shortLength = lengthMultBack - lengthDiff;
+					longLength = lengthMultFront + lengthDiff;
+					xOutside = shortLength * Math.sin(angle);
+					xInside = longLength * Math.sin(angle);
+					yOutside = shortLength * Math.cos(angle) + x2;  
+					yInside = longLength * Math.cos(angle) - x2;
+					
+					right1x = rx - xInside;
+					right1y = ry - yInside;
+					right2x = rx + xOutside;
 					right2y = ry + yOutside;
 					
 				}else{								//angle > 1.57 and < 3.14
@@ -826,20 +621,28 @@ public class TrajectorySetup {
 					angle = Math.PI - angle;
 					x2 = widthMult / Math.sin(angle);
 					lengthDiff = widthMult / Math.tan(angle);
-					shortLength = lengthMult - lengthDiff;
-					longLength = lengthMult + lengthDiff;
+					shortLength = lengthMultFront - lengthDiff;
+					longLength = lengthMultBack + lengthDiff;
 					xOutside = shortLength * Math.cos(angle) + x2;
 					xInside = longLength * Math.cos(angle) - x2;
 					yOutside = shortLength * Math.sin(angle);
 					yInside = longLength * Math.sin(angle);
 					
 					left1x = lx - xOutside;
-					right1x = rx - xInside;
 					left1y = ly + yOutside;
-					right1y = ry + yInside;
 					left2x = lx + xInside;
-					right2x = rx + xOutside;
 					left2y = ly - yInside;
+					
+					shortLength = lengthMultBack - lengthDiff;
+					longLength = lengthMultFront + lengthDiff;
+					xOutside = shortLength * Math.cos(angle) + x2;
+					xInside = longLength * Math.cos(angle) - x2;
+					yOutside = shortLength * Math.sin(angle);
+					yInside = longLength * Math.sin(angle);
+					
+					right1x = rx - xInside;
+					right1y = ry + yInside;
+					right2x = rx + xOutside;
 					right2y = ry - yOutside;
 					
 				}
