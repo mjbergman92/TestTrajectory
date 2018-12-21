@@ -43,7 +43,9 @@ import org.jfree.ui.RectangleInsets;
 
 import jaci.pathfinder.Pathfinder;
 
-public class GraphTrajectory {
+import javax.script.*;
+
+public class GraphTrajectory { 
 
 	static String baseInstructions = "Enter Trajectory #. Then Press the 'r' Key", trajSet = "Trajectory ", running = " Running", pause = " Paused", pressR = " Press the 'r' Key to Run Trajectory", wait = "Please Wait";
 	static double counter, timePassed; //tracking and calculating for loop and time sensitive data for the graphs
@@ -63,7 +65,7 @@ public class GraphTrajectory {
 		//create and configure the window
 		JFrame window = new JFrame();
 		window.setTitle("Trajectory GUI");
-		window.setSize(1450,1000);
+		window.setSize(1550,1000);
 		window.isResizable();
 		window.setLayout(new BorderLayout());
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -101,13 +103,13 @@ public class GraphTrajectory {
 		dataset.setAutoWidth(false);
 		JFreeChart chart = ChartFactory.createXYLineChart("Pathfinder Trajectory", "Distance X (Inches)", "Distance Y (Inches)", dataset);
 		chart.getXYPlot().setBackgroundImage(new ImageIcon("Pic.png").getImage());
-		chart.setPadding(new RectangleInsets(0, 50, 0, 50));
+		chart.setPadding(new RectangleInsets(0, 20, 0, 20));
 		NumberAxis numberRangeAxis = (NumberAxis)chart.getXYPlot().getRangeAxis();
 		numberRangeAxis.setRange(-161.69, 161.69);
 		NumberAxis numberDomainAxis = (NumberAxis)chart.getXYPlot().getDomainAxis();
 		numberDomainAxis.setRange(0, 648);
 		ChartPanel chartPanel = new ChartPanel(chart);
-		chartPanel.setPreferredSize(new Dimension(625, 400));
+		chartPanel.setPreferredSize(new Dimension(875, 650));
 		Lpanel.add(chartPanel,BorderLayout.NORTH);
 		
 		//create xy line graph for velocity
@@ -180,15 +182,46 @@ public class GraphTrajectory {
 							if(wait1) {
 								
 								label.setFont(new Font(Font.DIALOG, Font.BOLD, 30));
+								label.setText(trajSet + traj + ". Please Wait");
 								
 							}else {
 								if(button.getText() == "Load") {
+									
+									leftSeries.clear();
+									rightSeries.clear();
+									robot.clear();
+									lineAcross.clear();
+									leftVSeries.clear();
+									rightVSeries.clear();
+									leftASeries.clear();
+									rightASeries.clear();
+									leftJSeries.clear();
+									rightJSeries.clear();
+									
+									leftDSeries.clear();
+									rightDSeries.clear();
+									trajectorySetup.iTime = 0;
 									
 									button.doClick();
 									label.setText(trajSet + traj + running);
 									label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
 									
 								}else {
+									
+									leftSeries.clear();
+									rightSeries.clear();
+									robot.clear();
+									lineAcross.clear();
+									leftVSeries.clear();
+									rightVSeries.clear();
+									leftASeries.clear();
+									rightASeries.clear();
+									leftJSeries.clear();
+									rightJSeries.clear();
+									
+									leftDSeries.clear();
+									rightDSeries.clear();
+									trajectorySetup.iTime = 0;
 									
 									button.doClick();
 									label.setText(trajSet + traj + "." + pressR + " OR Select a Different Trajectory.");
@@ -307,7 +340,7 @@ public class GraphTrajectory {
 											case 1:
 												if(trajectorySetup.setupisFinished()) {
 													step++;
-													trajectorySetup.setup(2);
+													trajectorySetup.setup(2, false);
 													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
@@ -316,7 +349,7 @@ public class GraphTrajectory {
 											case 2:
 												if(trajectorySetup.setupisFinished()) {
 													step++;
-													trajectorySetup.setup(3);
+													trajectorySetup.setup(3, false);
 													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
@@ -325,7 +358,7 @@ public class GraphTrajectory {
 											case 3:
 												if(trajectorySetup.setupisFinished()) {
 													step++;
-													trajectorySetup.setup(4);
+													trajectorySetup.setup(4, false);
 													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
@@ -334,7 +367,7 @@ public class GraphTrajectory {
 											case 4:
 												if(trajectorySetup.setupisFinished()) {
 													step++;
-													trajectorySetup.setup(5);
+													trajectorySetup.setup(5, false);
 													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
@@ -387,22 +420,43 @@ public class GraphTrajectory {
 							step = 1;
 							wait1 = true;
 							
+							System.out.println("Not Running" + firstTime);
+							
+							leftSeries.clear();
+							rightSeries.clear();
+							robot.clear();
+							lineAcross.clear();
+							leftVSeries.clear();
+							rightVSeries.clear();
+							leftASeries.clear();
+							rightASeries.clear();
+							leftJSeries.clear();
+							rightJSeries.clear();
+							
+							leftDSeries.clear();
+							rightDSeries.clear();
+							trajectorySetup.iTime = 0;
+							
 							while(!run) {
 								if(setup && firstTime) {
-									if( !trajectorySetup.firstTimeThroughDone[traj - 1]) {
-										trajectorySetup.setup(2);
-										trajectorySetup.setup(3);
-										trajectorySetup.setup(4);
-										trajectorySetup.setup(5);
-										trajectorySetup.setup(1);
-										trajectorySetup.firstTimeThroughDone[traj - 1] = true;
-	
+									//if( !trajectorySetup.firstTimeThroughDone[traj - 1]) {
+										trajectorySetup.setup(2, true);
+										trajectorySetup.setup(3, true);
+										trajectorySetup.setup(4, true);
+										trajectorySetup.setup(5, true);
+										trajectorySetup.setup(1, true);
+										//trajectorySetup.firstTimeThroughDone[traj - 1] = true;
+										System.out.println("Hi Guys");
 										
-									}
-									label.setText(trajSet + traj + "." + pressR);
+									//}
+									label.setText(trajSet + traj + ". " + "Ready." + pressR);
 									wait1 = false;
 									firstTime = false;
+									System.out.print(" ");
 								}
+								
+								System.out.print("");
+								//System.out.println("Hello World");
 								
 							}
 									
@@ -420,7 +474,7 @@ public class GraphTrajectory {
 							leftDSeries.clear();
 							rightDSeries.clear();
 							trajectorySetup.iTime = 0;
-							System.out.print("");
+							
 							
 							while(!trajectorySetup.checkDone) {
 								
@@ -441,12 +495,27 @@ public class GraphTrajectory {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				
+				leftSeries.clear();
+				rightSeries.clear();
+				robot.clear();
+				lineAcross.clear();
+				leftVSeries.clear();
+				rightVSeries.clear();
+				leftASeries.clear();
+				rightASeries.clear();
+				leftJSeries.clear();
+				rightJSeries.clear();
+				
+				leftDSeries.clear();
+				rightDSeries.clear();
+				trajectorySetup.iTime = 0;
+				
 				if(button.getText() != "Load"){
 					
 					button.doClick();
 					label.setText(trajSet + traj + "." + pressR + " OR Select a Different Trajectory.");
 					label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
-					firstTime = true;
+					//firstTime = true;
 					
 
 				}
@@ -596,7 +665,7 @@ public class GraphTrajectory {
 							leftSeries.clear();
 							rightSeries.clear();
 							traj = Integer.parseInt(trajBox.getSelectedItem().toString());
-							trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()));
+							trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()), false);
 							while(!trajectorySetup.setupisFinished()) {
 								
 								double leftX = trajectorySetup.leftXTrajectory(), leftY = trajectorySetup.leftYTrajectory(), rightX = trajectorySetup.rightXTrajectory(), rightY = trajectorySetup.rightYTrajectory();
@@ -627,7 +696,7 @@ public class GraphTrajectory {
 						leftSeries.clear();
 						rightSeries.clear();
 						traj = Integer.parseInt(trajBox.getSelectedItem().toString());
-						trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()));
+						trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()), false);
 						while(!trajectorySetup.setupisFinished()) {
 							
 							double leftX = trajectorySetup.leftXTrajectory(), leftY = trajectorySetup.leftYTrajectory(), rightX = trajectorySetup.rightXTrajectory(), rightY = trajectorySetup.rightYTrajectory();
@@ -672,7 +741,7 @@ public class GraphTrajectory {
 						leftSeries.clear();
 						rightSeries.clear();
 						traj = Integer.parseInt(trajBox.getSelectedItem().toString());
-						trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()));
+						trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()), false);
 						while(!trajectorySetup.setupisFinished()) {
 							
 							double leftX = trajectorySetup.leftXTrajectory(), leftY = trajectorySetup.leftYTrajectory(), rightX = trajectorySetup.rightXTrajectory(), rightY = trajectorySetup.rightYTrajectory();
@@ -716,7 +785,7 @@ public class GraphTrajectory {
 						leftSeries.clear();
 						rightSeries.clear();
 						traj = Integer.parseInt(trajBox.getSelectedItem().toString());
-						trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()));
+						trajectorySetup.setup(Integer.parseInt(stepBox.getSelectedItem().toString()), false);
 						while(!trajectorySetup.setupisFinished()) {
 							
 							double leftX = trajectorySetup.leftXTrajectory(), leftY = trajectorySetup.leftYTrajectory(), rightX = trajectorySetup.rightXTrajectory(), rightY = trajectorySetup.rightYTrajectory();
@@ -749,6 +818,78 @@ public class GraphTrajectory {
 						}
 						
 					}
+					
+				});
+				
+				xCoordinate.addKeyListener(new KeyListener() {
+
+					@Override
+					public void keyTyped(KeyEvent e) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void keyPressed(KeyEvent e) {
+						
+						if(e.getKeyCode() == 10) {
+							
+							ScriptEngineManager mgr = new ScriptEngineManager();
+						    ScriptEngine engine = mgr.getEngineByName("JavaScript");
+						    try {
+								xCoordinate.setText(engine.eval(xCoordinate.getText()) + "");
+							} catch (ScriptException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+							
+						}
+						
+					}
+
+					@Override
+					public void keyReleased(KeyEvent e) {
+						// TODO Auto-generated method stub
+						
+					}
+					
+					
+					
+				});
+				
+				yCoordinate.addKeyListener(new KeyListener() {
+
+					@Override
+					public void keyTyped(KeyEvent e) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void keyPressed(KeyEvent e) {
+						
+						if(e.getKeyCode() == 10) {
+							
+							ScriptEngineManager mgr = new ScriptEngineManager();
+						    ScriptEngine engine = mgr.getEngineByName("JavaScript");
+						    try {
+								yCoordinate.setText(engine.eval(yCoordinate.getText()) + "");
+							} catch (ScriptException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+							
+						}
+						
+					}
+
+					@Override
+					public void keyReleased(KeyEvent e) {
+						// TODO Auto-generated method stub
+						
+					}
+					
+					
 					
 				});
 				

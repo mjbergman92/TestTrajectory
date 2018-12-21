@@ -18,8 +18,8 @@ import jaci.pathfinder.modifiers.TankModifier;
 
 public class TrajectorySetup {
 	
-	double wheelBase_width = 16.375, wheelBase_length = 16;
-	double robot_width = 18, robot_length = 20;
+	double wheelBase_width = 24, wheelBase_length = 30;
+	double robot_width = 28, robot_length = 34;
 	double lengthToPivot = -6; //positive from center of robot to front, negative if length from center to back, 0 if in center
 	Trajectory left, right;
 	Trajectory.Segment segLeftX, segLeftY, segRightX, segRightY, segLV, segRV, segLA, segRA, segLJ, segRJ, segLP, segRP, segTime, segTraj;
@@ -31,7 +31,7 @@ public class TrajectorySetup {
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
 	public int posTraj;
 	Waypoint[] points;
-	private final double absMaxVelocity = 16;
+	private final double absMaxVelocity = 48;
 	private double setVelocity = 0;
 	public boolean checkDone = false;
 	private double robotLoopTime = 0.020;
@@ -42,7 +42,7 @@ public class TrajectorySetup {
 		
 	}
 	
-	public void setup(int step) {
+	public void setup(int step, boolean firstTimeThrough) {
 		
 		
 		checkDone = false;
@@ -50,7 +50,8 @@ public class TrajectorySetup {
 		resetCounters();
 		setPoints(step);
 		
-		if(firstTimeThroughDone[posTraj - 1]) {
+		
+		if(!firstTimeThrough) {
 			
 			testTrajectory(step);
 			Scanner scanner;
@@ -111,7 +112,7 @@ public class TrajectorySetup {
 			}
 			
 			
-		}else { 
+		}else {
 			
 			new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv").delete();
 			new File("trajectory" + posTraj + "/right" + "trajectorystep" + step + "traj" + posTraj + ".csv").delete();
@@ -491,14 +492,14 @@ public class TrajectorySetup {
 				left2y = ly - lengthMultBack;
 				right2y = ry - lengthMultBack;
 			}
-		}else if(lx == rx) {
+		}else if(lx == ry) {
 			if(ly > ry) {
 				left1x = lx + lengthMultFront;
 				right1x = rx + lengthMultFront;
 				left1y = ly + widthMult;
 				right1y = ry - widthMult;
-				left2x = lx - lengthMultFront;
-				right2x = rx - lengthMultFront;
+				left2x = lx - lengthMultBack;
+				right2x = rx - lengthMultBack;
 				left2y = ly + widthMult;
 				right2y = ry - widthMult;
 			}else {
@@ -558,7 +559,9 @@ public class TrajectorySetup {
 					
 				}else{ 								//angle > 0 and < about 1.57 
 					angle = Math.abs(angle);
+					System.out.println(angle);
 					angle = (Math.PI / 2) - angle;
+					System.out.println(angle);
 					x2 = widthMult / Math.sin(angle);
 					lengthDiff = widthMult / Math.tan(angle);
 					shortLength = lengthMultFront - lengthDiff;
