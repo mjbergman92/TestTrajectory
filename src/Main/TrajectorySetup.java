@@ -31,12 +31,10 @@ public class TrajectorySetup {
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
 	public int posTraj;
 	Waypoint[] points;
-	private final double absMaxVelocity = 48;
+	private final double absMaxVelocity = 60;
 	private double setVelocity = 0;
 	public boolean checkDone = false;
-	private double robotLoopTime = 0.020;
-	public boolean[] firstTimeThroughDone = {false, false, false, false, false, false, false, false};
-	
+	private double robotLoopTime = 0.020;	
 	
 	public TrajectorySetup() {
 		
@@ -50,10 +48,11 @@ public class TrajectorySetup {
 		resetCounters();
 		setPoints(step);
 		
+		GraphTrajectory.loadedMorePercentage();
 		
 		if(!firstTimeThrough) {
 			
-			testTrajectory(step);
+			//testTrajectory();
 			Scanner scanner;
 			double velocity = 0;
 			try {
@@ -67,8 +66,11 @@ public class TrajectorySetup {
 				e1.printStackTrace();
 				
 			}
+			GraphTrajectory.loadedMorePercentage();
 			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, velocity, 180, 400);
 			trajectory = Pathfinder.generate(points, configuration);
+			
+			GraphTrajectory.loadedMorePercentage();
 			
 			resetCounters();
 			TankModifier modifier = new TankModifier(trajectory);
@@ -114,16 +116,22 @@ public class TrajectorySetup {
 			
 		}else {
 			
+			System.out.println("Good Sign");
+			
 			new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv").delete();
 			new File("trajectory" + posTraj + "/right" + "trajectorystep" + step + "traj" + posTraj + ".csv").delete();
 			new File("trajectory" + posTraj + "left" + "trajectorystep" + step + "traj" + posTraj + ".csv").delete();
 			new File("trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv").delete();
-
 			
-			testTrajectory(step);
+			//System.out.println("Hi Guys");
+			testTrajectory();
+			System.out.println("Better Sign");
+			GraphTrajectory.loadedMorePercentage();
 			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, setVelocity, 180, 400);
 			trajectory = Pathfinder.generate(points, configuration);
 			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv"), trajectory);
+			
+			
 			
 			resetCounters();
 			TankModifier modifier = new TankModifier(trajectory);
@@ -169,6 +177,8 @@ public class TrajectorySetup {
 			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/right" + "trajectorystep" + step + "traj" + posTraj + ".csv"), right);
 			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/left" + "trajectorystep" + step + "traj" + posTraj + ".csv"), left);
 			
+			GraphTrajectory.loadedMorePercentage();
+			
 			try {
 				
 				FileWriter fw = new FileWriter("trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv");
@@ -190,12 +200,13 @@ public class TrajectorySetup {
 		
 	}
 	
-	private void testTrajectory(int step) {
+	private void testTrajectory() {
 				
 		long originalTime = System.currentTimeMillis();
 		double countTimeTest = 1;
-		boolean good;
-		while(countTimeTest <= absMaxVelocity) {
+		boolean good = true;
+		setVelocity = 0;
+		while(good && setVelocity < absMaxVelocity) {
 			
 			if(System.currentTimeMillis() - originalTime > countTimeTest * 40) {
 				good = true;
@@ -238,10 +249,70 @@ public class TrajectorySetup {
 					
 				}			
 				
-				countTimeTest = countTimeTest + 0.25;
+				countTimeTest = countTimeTest + 1;
 				
 			}
+			
+			
 		}
+		
+		originalTime = System.currentTimeMillis();
+		good = true;
+		countTimeTest -= 1;
+		int i = 0;
+		while(good && setVelocity < absMaxVelocity) {
+			
+			if(System.currentTimeMillis() - originalTime > i * 40) {
+				good = true;
+				resetCounters();
+				double test = countTimeTest;
+				//System.out.println(test);
+				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, test, 180, 400);
+				Trajectory trajectory = Pathfinder.generate(points, config);
+				TankModifier modifier = new TankModifier(trajectory);
+				modifier.modify(wheelBase_width);
+				Trajectory left = modifier.getLeftTrajectory();
+				Trajectory right = modifier.getRightTrajectory();
+				
+				for(int l = 0; l < left.length(); l++) {
+					
+					double leftVel = left.get(l).velocity;
+					
+					if(leftVel > absMaxVelocity) {
+						
+						good = false;
+						
+					}
+				}
+				
+				for(int r = 0; r < right.length(); r++) {
+					
+					double rightVel = right.get(r).velocity;
+					
+					if(rightVel > absMaxVelocity) {
+						
+						good = false;
+						
+					}
+				}
+				
+				if(good) {
+					
+					setVelocity = test;
+					//System.out.println(test);
+					
+				}			
+				
+				countTimeTest = countTimeTest + .25;
+				i++;
+				
+			}
+			
+			//System.out.println("G" + setVelocity);
+		}
+		//System.out.println("G" + setVelocity);
+		
+		
 	}
 	
 	private void setPoints(int step) {
@@ -326,6 +397,8 @@ public class TrajectorySetup {
 					new Waypoint(xPoint2, yPoint2, hPoint2),
 					new Waypoint(xPoint3, yPoint3, hPoint3)
 				};
+			
+			System.out.println(xPoint1 + "," + yPoint1 + "," + hPoint1);
 
 			
 			in.close();
@@ -333,7 +406,7 @@ public class TrajectorySetup {
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			e.getMessage();
+			System.out.println(e.getMessage());
 		}
 		
 	}
@@ -559,9 +632,7 @@ public class TrajectorySetup {
 					
 				}else{ 								//angle > 0 and < about 1.57 
 					angle = Math.abs(angle);
-					System.out.println(angle);
 					angle = (Math.PI / 2) - angle;
-					System.out.println(angle);
 					x2 = widthMult / Math.sin(angle);
 					lengthDiff = widthMult / Math.tan(angle);
 					shortLength = lengthMultFront - lengthDiff;

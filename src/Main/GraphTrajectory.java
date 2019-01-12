@@ -57,6 +57,9 @@ public class GraphTrajectory {
 	static boolean setup = false;
 	static boolean firstTime = true;
 	static boolean wait1 = true;
+	static int percentage = 0;
+	static JLabel label;
+	static int pastTraj = 0;
 	
 	public static void main(String args[]) {
 		
@@ -76,7 +79,7 @@ public class GraphTrajectory {
 		//create and configure the button and label
 		JButton button = new JButton("End");
 		button.setAlignmentX(145);
-		JLabel label = new JLabel();
+		label = new JLabel();
 		label.setText(baseInstructions);
 		label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
 		JPanel topPanel = new JPanel();
@@ -420,8 +423,6 @@ public class GraphTrajectory {
 							step = 1;
 							wait1 = true;
 							
-							System.out.println("Not Running" + firstTime);
-							
 							leftSeries.clear();
 							rightSeries.clear();
 							robot.clear();
@@ -439,16 +440,38 @@ public class GraphTrajectory {
 							
 							while(!run) {
 								if(setup && firstTime) {
-									//if( !trajectorySetup.firstTimeThroughDone[traj - 1]) {
+									percentage = 0;
+									if(traj != pastTraj) {
+									
 										trajectorySetup.setup(2, true);
+										loadedMorePercentage();
 										trajectorySetup.setup(3, true);
+										loadedMorePercentage();
 										trajectorySetup.setup(4, true);
-										trajectorySetup.setup(5, true);
+										loadedMorePercentage();
+										trajectorySetup.setup(5, true); 
+										loadedMorePercentage();
 										trajectorySetup.setup(1, true);
-										//trajectorySetup.firstTimeThroughDone[traj - 1] = true;
-										System.out.println("Hi Guys");
+										pastTraj = traj;
 										
-									//}
+									}
+									
+									leftSeries.clear();
+									rightSeries.clear();
+									robot.clear();
+									lineAcross.clear();
+									leftVSeries.clear();
+									rightVSeries.clear();
+									leftASeries.clear();
+									rightASeries.clear();
+									leftJSeries.clear();
+									rightJSeries.clear();
+									
+									leftDSeries.clear();
+									rightDSeries.clear();
+									trajectorySetup.iTime = 0;
+									
+									trajectorySetup.setup(1, false);
 									label.setText(trajSet + traj + ". " + "Ready." + pressR);
 									wait1 = false;
 									firstTime = false;
@@ -456,7 +479,6 @@ public class GraphTrajectory {
 								}
 								
 								System.out.print("");
-								//System.out.println("Hello World");
 								
 							}
 									
@@ -931,4 +953,14 @@ public class GraphTrajectory {
 		button.doClick();
 		
 	}
+	
+	public static void loadedMorePercentage() {
+		
+		if(!run) {
+			percentage += 5;
+			label.setText(trajSet + traj + ". " + percentage + "%");
+		}
+		
+	}
+	
 }
