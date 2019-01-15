@@ -3,7 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="var" path="Pathfinder" sourcepath="/USERLIBS_DIR">
 		<attributes>
-			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/Users/malachi/workspace/Pathfinder-master/Pathfinder-Java/build/libs/pathfinderjava/shared/any64"/>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/Users/malachi/All Workspaces/workspace/Pathfinder-master/Pathfinder-Java/build/libs/pathfinderjava/shared/any64"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="/Users/malachi/Additioinal Jars/GraphingTool_lib/jfreechart-1.0.19.jar"/>

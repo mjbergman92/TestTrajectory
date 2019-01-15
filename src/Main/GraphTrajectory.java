@@ -336,7 +336,7 @@ public class GraphTrajectory {
 								
 								if(!paused) {
 									
-									if(((System.currentTimeMillis() - originalTime)/1000) >= counter*.020 + .020) {
+									if(((System.currentTimeMillis() - originalTime)/1000) >= counter*trajectorySetup.robotLoopTime + trajectorySetup.robotLoopTime) {
 										
 										try {
 											switch(step) {
@@ -344,7 +344,7 @@ public class GraphTrajectory {
 												if(trajectorySetup.setupisFinished()) {
 													step++;
 													trajectorySetup.setup(2, false);
-													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
+													originalTime = System.currentTimeMillis() - (((counter * trajectorySetup.robotLoopTime) + trajectorySetup.robotLoopTime) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
 												}
@@ -353,7 +353,7 @@ public class GraphTrajectory {
 												if(trajectorySetup.setupisFinished()) {
 													step++;
 													trajectorySetup.setup(3, false);
-													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
+													originalTime = System.currentTimeMillis() - (((counter * trajectorySetup.robotLoopTime) + trajectorySetup.robotLoopTime) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
 												}
@@ -362,7 +362,7 @@ public class GraphTrajectory {
 												if(trajectorySetup.setupisFinished()) {
 													step++;
 													trajectorySetup.setup(4, false);
-													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
+													originalTime = System.currentTimeMillis() - (((counter * trajectorySetup.robotLoopTime) + trajectorySetup.robotLoopTime) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
 												}
@@ -371,7 +371,7 @@ public class GraphTrajectory {
 												if(trajectorySetup.setupisFinished()) {
 													step++;
 													trajectorySetup.setup(5, false);
-													originalTime = System.currentTimeMillis() - (((counter * .020) + .020) * 1000);	
+													originalTime = System.currentTimeMillis() - (((counter * trajectorySetup.robotLoopTime) + trajectorySetup.robotLoopTime) * 1000);	
 													leftSeries.clear();
 													rightSeries.clear();
 												}

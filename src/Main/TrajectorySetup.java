@@ -32,9 +32,11 @@ public class TrajectorySetup {
 	public int posTraj;
 	Waypoint[] points;
 	private final double absMaxVelocity = 175;
+	private final double absMaxAcceleration = 35;
+	private final double absMaxJerk = 50;
 	private double setVelocity = 0;
 	public boolean checkDone = false;
-	private double robotLoopTime = 0.020;	
+	public double robotLoopTime = 0.040;	
 	
 	public TrajectorySetup() {
 		
@@ -67,7 +69,7 @@ public class TrajectorySetup {
 				
 			}
 			GraphTrajectory.loadedMorePercentage();
-			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, velocity, 180, 400);
+			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, velocity, absMaxAcceleration, absMaxJerk);
 			trajectory = Pathfinder.generate(points, configuration);
 			
 			GraphTrajectory.loadedMorePercentage();
@@ -116,7 +118,7 @@ public class TrajectorySetup {
 			
 		}else {
 			
-			System.out.println("Good Sign");
+			//System.out.println("Good Sign");
 			
 			new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv").delete();
 			new File("trajectory" + posTraj + "/right" + "trajectorystep" + step + "traj" + posTraj + ".csv").delete();
@@ -125,9 +127,9 @@ public class TrajectorySetup {
 			
 			//System.out.println("Hi Guys");
 			testTrajectory();
-			System.out.println("Better Sign");
+			//System.out.println("Better Sign");
 			GraphTrajectory.loadedMorePercentage();
-			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, setVelocity, 180, 400);
+			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, setVelocity, absMaxAcceleration, absMaxJerk);
 			trajectory = Pathfinder.generate(points, configuration);
 			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv"), trajectory);
 			
@@ -213,7 +215,61 @@ public class TrajectorySetup {
 				resetCounters();
 				double test = countTimeTest;
 				//System.out.println(test);
-				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, test, 180, 400);
+				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, test, absMaxAcceleration, absMaxJerk);
+				Trajectory trajectory = Pathfinder.generate(points, config);
+				TankModifier modifier = new TankModifier(trajectory);
+				modifier.modify(wheelBase_width);
+				Trajectory left = modifier.getLeftTrajectory();
+				Trajectory right = modifier.getRightTrajectory();
+				
+				for(int l = 0; l < left.length(); l++) {
+					
+					double leftVel = left.get(l).velocity;
+					
+					if(leftVel > absMaxVelocity) {
+						
+						good = false;
+						
+					}
+				}
+				
+				for(int r = 0; r < right.length(); r++) {
+					
+					double rightVel = right.get(r).velocity;
+					
+					if(rightVel > absMaxVelocity) {
+						
+						good = false;
+						
+					}
+				}
+				
+				if(good) {
+					
+					setVelocity = test;
+					//System.out.println(test);
+					
+				}			
+				
+				countTimeTest = countTimeTest + 8;
+				
+			}
+			
+			
+		}
+		
+		originalTime = System.currentTimeMillis();
+		good = true;
+		countTimeTest -= 1;
+		int i = 0;
+		while(good && setVelocity < absMaxVelocity) {
+			
+			if(System.currentTimeMillis() - originalTime > i * 40) {
+				good = true;
+				resetCounters();
+				double test = countTimeTest;
+				//System.out.println(test);
+				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, test, absMaxAcceleration, absMaxJerk);
 				Trajectory trajectory = Pathfinder.generate(points, config);
 				TankModifier modifier = new TankModifier(trajectory);
 				modifier.modify(wheelBase_width);
@@ -250,62 +306,63 @@ public class TrajectorySetup {
 				}			
 				
 				countTimeTest = countTimeTest + 1;
+				i++;
 				
 			}
 			
-			
-		}
-		
-		originalTime = System.currentTimeMillis();
-		good = true;
-		countTimeTest -= 1;
-		int i = 0;
-		while(good && setVelocity < absMaxVelocity) {
-			
-			if(System.currentTimeMillis() - originalTime > i * 40) {
-				good = true;
-				resetCounters();
-				double test = countTimeTest;
-				//System.out.println(test);
-				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, test, 180, 400);
-				Trajectory trajectory = Pathfinder.generate(points, config);
-				TankModifier modifier = new TankModifier(trajectory);
-				modifier.modify(wheelBase_width);
-				Trajectory left = modifier.getLeftTrajectory();
-				Trajectory right = modifier.getRightTrajectory();
+			originalTime = System.currentTimeMillis();
+			good = true;
+			countTimeTest -= 1;
+			i = 0;
+			while(good && setVelocity < absMaxVelocity) {
 				
-				for(int l = 0; l < left.length(); l++) {
-					
-					double leftVel = left.get(l).velocity;
-					
-					if(leftVel > absMaxVelocity) {
-						
-						good = false;
-						
-					}
-				}
-				
-				for(int r = 0; r < right.length(); r++) {
-					
-					double rightVel = right.get(r).velocity;
-					
-					if(rightVel > absMaxVelocity) {
-						
-						good = false;
-						
-					}
-				}
-				
-				if(good) {
-					
-					setVelocity = test;
+				if(System.currentTimeMillis() - originalTime > i * 40) {
+					good = true;
+					resetCounters();
+					double test = countTimeTest;
 					//System.out.println(test);
+					Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, test, absMaxAcceleration, absMaxJerk);
+					Trajectory trajectory = Pathfinder.generate(points, config);
+					TankModifier modifier = new TankModifier(trajectory);
+					modifier.modify(wheelBase_width);
+					Trajectory left = modifier.getLeftTrajectory();
+					Trajectory right = modifier.getRightTrajectory();
 					
-				}			
+					for(int l = 0; l < left.length(); l++) {
+						
+						double leftVel = left.get(l).velocity;
+						
+						if(leftVel > absMaxVelocity) {
+							
+							good = false;
+							
+						}
+					}
+					
+					for(int r = 0; r < right.length(); r++) {
+						
+						double rightVel = right.get(r).velocity;
+						
+						if(rightVel > absMaxVelocity) {
+							
+							good = false;
+							
+						}
+					}
+					
+					if(good) {
+						
+						setVelocity = test;
+						//System.out.println(test);
+						
+					}			
+					
+					countTimeTest = countTimeTest + .25;
+					i++;
+					
+				}
 				
-				countTimeTest = countTimeTest + .25;
-				i++;
-				
+				//System.out.println("G" + setVelocity);
 			}
 			
 			//System.out.println("G" + setVelocity);
