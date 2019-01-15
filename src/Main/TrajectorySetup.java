@@ -18,8 +18,8 @@ import jaci.pathfinder.modifiers.TankModifier;
 
 public class TrajectorySetup {
 	
-	double wheelBase_width = 24, wheelBase_length = 30;
-	double robot_width = 28, robot_length = 34;
+	double wheelBase_width = 23.375, wheelBase_length = 24;
+	double robot_width = 28, robot_length = 36;
 	double lengthToPivot = -6; //positive from center of robot to front, negative if length from center to back, 0 if in center
 	Trajectory left, right;
 	Trajectory.Segment segLeftX, segLeftY, segRightX, segRightY, segLV, segRV, segLA, segRA, segLJ, segRJ, segLP, segRP, segTime, segTraj;
@@ -31,7 +31,7 @@ public class TrajectorySetup {
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
 	public int posTraj;
 	Waypoint[] points;
-	private final double absMaxVelocity = 60;
+	private final double absMaxVelocity = 175;
 	private double setVelocity = 0;
 	public boolean checkDone = false;
 	private double robotLoopTime = 0.020;	
