@@ -21,6 +21,12 @@ public class TrajectorySetup {
 	double wheelBase_width = 23.375, wheelBase_length = 24;
 	double robot_width = 28, robot_length = 36;
 	double lengthToPivot = -6; // positive from center of robot to front, negative if length from center to back, 0 if in center
+	private final double absMaxVelocity = 175;
+	private final double absMaxAcceleration = 35;
+	private final double absMaxJerk = 50;
+	public double robotLoopTime = 0.020;
+	
+	//Nothing needs to be changed about the following block of code
 	Trajectory left, right;
 	Trajectory.Segment segLeftX, segLeftY, segRightX, segRightY, segLV, segRV, segLA, segRA, segLJ, segRJ, segLP, segRP, segTime, segTraj;
 	int i1, i2, i3, i4, iLV, iRV, iLA, iRA, iLJ, iRJ, iLP, iRP, iTime, iTraj;
@@ -31,12 +37,8 @@ public class TrajectorySetup {
 	public double xRobotOut1, yRobotOut1, xRobotOut2, yRobotOut2;
 	public int posTraj;
 	Waypoint[] points;
-	private final double absMaxVelocity = 175;
-	private final double absMaxAcceleration = 35;
-	private final double absMaxJerk = 50;
 	private double setVelocity = 0;
 	public boolean checkDone = false;
-	public double robotLoopTime = 0.040;
 
 	public TrajectorySetup() {
 
@@ -58,8 +60,7 @@ public class TrajectorySetup {
 			double velocity = 0;
 			try {
 
-				scanner = new Scanner(
-						new File("trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv"));
+				scanner = new Scanner(new File("trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv"));
 				velocity = Double.parseDouble(scanner.next());
 				scanner.close();
 
@@ -69,8 +70,7 @@ public class TrajectorySetup {
 
 			}
 			GraphTrajectory.loadedMorePercentage();
-			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime,
-					velocity, absMaxAcceleration, absMaxJerk);
+			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, velocity, absMaxAcceleration, absMaxJerk);
 			trajectory = Pathfinder.generate(points, configuration);
 
 			GraphTrajectory.loadedMorePercentage();
@@ -120,8 +120,7 @@ public class TrajectorySetup {
 
 			// System.out.println("Good Sign");
 
-			new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv")
-					.delete();
+			new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv").delete();
 			new File("trajectory" + posTraj + "/right" + "trajectorystep" + step + "traj" + posTraj + ".csv").delete();
 			new File("trajectory" + posTraj + "left" + "trajectorystep" + step + "traj" + posTraj + ".csv").delete();
 			new File("trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv").delete();
@@ -130,12 +129,9 @@ public class TrajectorySetup {
 			testTrajectory();
 			// System.out.println("Better Sign");
 			GraphTrajectory.loadedMorePercentage();
-			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime,
-					setVelocity, absMaxAcceleration, absMaxJerk);
+			Trajectory.Config configuration = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, setVelocity, absMaxAcceleration, absMaxJerk);
 			trajectory = Pathfinder.generate(points, configuration);
-			Pathfinder.writeToCSV(
-					new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv"),
-					trajectory);
+			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/center" + "/trajectorystep" + step + "traj" + posTraj + ".csv"), trajectory);
 
 			resetCounters();
 			TankModifier modifier = new TankModifier(trajectory);
@@ -178,19 +174,14 @@ public class TrajectorySetup {
 				}
 			}
 
-			Pathfinder.writeToCSV(
-					new File("trajectory" + posTraj + "/right" + "trajectorystep" + step + "traj" + posTraj + ".csv"),
-					right);
-			Pathfinder.writeToCSV(
-					new File("trajectory" + posTraj + "/left" + "trajectorystep" + step + "traj" + posTraj + ".csv"),
-					left);
+			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/right" + "trajectorystep" + step + "traj" + posTraj + ".csv"), right);
+			Pathfinder.writeToCSV(new File("trajectory" + posTraj + "/left" + "trajectorystep" + step + "traj" + posTraj + ".csv"), left);
 
 			GraphTrajectory.loadedMorePercentage();
 
 			try {
 
-				FileWriter fw = new FileWriter(
-						"trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv");
+				FileWriter fw = new FileWriter("trajectory" + posTraj + "/velocity" + "/velocity" + step + posTraj + ".csv");
 				BufferedWriter bw = new BufferedWriter(fw);
 				PrintWriter pw = new PrintWriter(bw);
 
@@ -222,8 +213,7 @@ public class TrajectorySetup {
 				resetCounters();
 				double test = countTimeTest;
 				// System.out.println(test);
-				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, test,
-						absMaxAcceleration, absMaxJerk);
+				Trajectory.Config config = new Trajectory.Config(FitMethod.HERMITE_CUBIC, 1000, robotLoopTime, test, absMaxAcceleration, absMaxJerk);
 				Trajectory trajectory = Pathfinder.generate(points, config);
 				TankModifier modifier = new TankModifier(trajectory);
 				modifier.modify(wheelBase_width);
