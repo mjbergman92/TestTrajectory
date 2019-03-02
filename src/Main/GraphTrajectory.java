@@ -77,6 +77,7 @@ public class GraphTrajectory {
 		JFrame coordinateWindow = new JFrame();
 		
 		//create and configure the button and label
+		JTextField textBox = new JTextField();
 		JButton button = new JButton("End");
 		button.setAlignmentX(145);
 		label = new JLabel();
@@ -85,7 +86,8 @@ public class GraphTrajectory {
 		JPanel topPanel = new JPanel();
 		topPanel.setLayout(new BorderLayout());
 		topPanel.add(button, BorderLayout.EAST);
-		topPanel.add(label, BorderLayout.CENTER);
+		topPanel.add(textBox, BorderLayout.CENTER);
+		topPanel.add(label, BorderLayout.WEST);
 		window.add(topPanel,BorderLayout.NORTH);
 		
 		//create panels for window
@@ -157,28 +159,45 @@ public class GraphTrajectory {
 		window.add(Lpanel, BorderLayout.WEST);
 		window.add(Rpanel, BorderLayout.EAST);
 		
-		button.addKeyListener(new KeyListener() {
+		textBox.addKeyListener(new KeyListener() {
 
 			@Override
 			public void keyPressed(KeyEvent e) {
 				
 				if(e.getKeyCode() == 10) { //enter/return key 
 					
-					if(paused == true) {
-						
-						paused = false;
-						label.setText(trajSet + traj + running);
+					if(traj == Integer.parseInt(textBox.getText())) {
+					
+						if(paused == true) {
+							
+							paused = false;
+							label.setText(trajSet + traj + running);
+							
+						}else {
+							
+							paused = true;
+							label.setText(trajSet + traj + pause);
+							
+						}
 						
 					}else {
 						
-						paused = true;
-						label.setText(trajSet + traj + pause);
+						traj = Integer.parseInt(textBox.getText());
+						setup = true;
+						firstTime = true;
+						label.setText(trajSet + traj + "." + pressR);
+						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
 						
 					}
 					
 				}else if(!paused) {
 					
 					if(e.getKeyChar() == 'r') {
+						
+						String text = textBox.getText();
+						String newText = text.trim();
+						String bestText = newText.substring(0, text.length());
+						textBox.setText(bestText);
 						
 						if(setup) {
 							
@@ -241,59 +260,7 @@ public class GraphTrajectory {
 							
 						}
 						
-					}else if(e.getKeyChar() == '1') {
-						
-						traj = 1;
-						setup = true;
-						firstTime = true;
-						label.setText(trajSet + traj + "." + pressR);
-						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
-						
-					}else if(e.getKeyChar() == '2') {
-						
-						traj = 2;
-						setup = true;
-						firstTime = true;
-						label.setText(trajSet + traj + "." + pressR);
-						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
-						
-					}else if(e.getKeyChar() == '3') {
-						
-						traj = 3;
-						setup = true;
-						firstTime = true;
-						label.setText(trajSet + traj + "." + pressR);
-						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
-						
-					}else if(e.getKeyChar() == '4') {
-						
-						traj = 4;
-						setup = true;
-						firstTime = true;
-						label.setText(trajSet + traj + "." + pressR);
-						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
-						
-					}else if(e.getKeyChar() == '5') {
-						
-						traj = 5;
-						setup = true;
-						firstTime = true;
-						label.setText(trajSet + traj + "." + pressR);
-						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
-						
-					}else if(e.getKeyChar() == '6') {
-						
-						traj = 6;
-						setup = true;
-						firstTime = true;
-						label.setText(trajSet + traj + "." + pressR);
-						label.setFont(new Font(Font.DIALOG, Font.PLAIN, 25));
-						
-					}else if(e.getKeyChar() == '7') {
-						
-					}else if(e.getKeyChar() == '8') {
-						
-					}else {
+					}else if((((e.getKeyChar() != '1' && e.getKeyChar() != '2') && (e.getKeyChar() != '3' && e.getKeyChar() != '4')) && ((e.getKeyChar() != '5' && e.getKeyChar() != '6') && (e.getKeyChar() != '7' && e.getKeyChar() != '8'))) && (e.getKeyChar() != '9' && e.getKeyChar() != '0')){
 						
 						if(!setup) {
 							
@@ -577,7 +544,7 @@ public class GraphTrajectory {
 				fieldLabels.add(yLabel);
 				fieldLabels.add(headingLabel);
 				
-				String trajs[] = {"1", "2", "3", "4", "5", "6", "7", "8"};
+				String trajs[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"};
 				String steps[] = {"1", "2", "3", "4", "5"};
 				String waypoints[] = {"1", "2", "3"};
 				
@@ -918,6 +885,7 @@ public class GraphTrajectory {
 				coordinateWindow.setVisible(true);
 				
 				
+			
 			}
 
 			@Override
